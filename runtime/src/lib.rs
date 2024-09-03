@@ -15,6 +15,8 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
+use codec::Encode;
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -22,7 +24,7 @@ use sp_version::RuntimeVersion;
 pub use frame_support::{
 	construct_runtime, derive_impl, parameter_types,
 	traits::{
-		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness,
+		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem,
 		StorageInfo,
 	},
 	weights::{
@@ -32,6 +34,7 @@ pub use frame_support::{
 		IdentityFee, Weight,
 	},
 	StorageValue,
+	PalletId,
 };
 use frame_support::{
 	genesis_builder_helper::{build_state, get_preset},
@@ -45,14 +48,16 @@ use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-/// Import the template pallet.
-pub use pallet_template;
+pub use pallet_network;
+pub use pallet_subnet_democracy;
 
 /// An index to a block.
 pub type BlockNumber = u32;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
+
+pub type AccountPublic = <Signature as Verify>::Signer;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
@@ -247,10 +252,76 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = pallet_sudo::weights::SubstrateWeight<Runtime>;
 }
 
-/// Configure the pallet-template in pallets/template.
-impl pallet_template::Config for Runtime {
+parameter_types! {
+	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+	pub const DepositBase: Balance = (1) as Balance * 2_000 * 10_000 + (88 as Balance) * 100 * 10_000;
+	// Additional storage item size of 32 bytes.
+	pub const DepositFactor: Balance = (0) as Balance * 2_000 * 10_000 + (32 as Balance) * 100 * 10_000;
+	pub const MaxSignatories: u32 = 100;
+}
+
+impl pallet_multisig::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_template::weights::SubstrateWeight<Runtime>;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = MaxSignatories;
+	type WeightInfo = pallet_multisig::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
+
+parameter_types! {
+	pub const InitialTxRateLimit: u64 = 0;
+	pub const EpochLength: u64 = 10;
+	pub const NetworkPalletId: PalletId = PalletId(*b"/network");
+	pub const SubnetInitializationCost: u128 = 100_000_000_000_000_000_000;
+}
+
+impl pallet_network::Config for Runtime {
+	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type EpochLength = EpochLength;
+	type StringLimit = ConstU32<12288>;
+	type InitialTxRateLimit = InitialTxRateLimit;
+// 	type SecsPerBlock = ConstU64<{ MILLISECS_PER_BLOCK as u64 }>; // not in use, remove
+// 	type Year = ConstU64<{ DAYS as u64 }>; // not in use, remove
+// 	type OffchainSignature = Signature;
+// 	type OffchainPublic = AccountPublic;
+	type PalletId = NetworkPalletId;
+	type SubnetInitializationCost = SubnetInitializationCost;
+	type Randomness = InsecureRandomnessCollectiveFlip;
+}
+
+parameter_types! {
+	// Mainnet
+	// pub const VotingPeriod: BlockNumber = DAYS * 21;
+	// pub const EnactmentPeriod: BlockNumber = DAYS * 7;
+
+	// Testnet
+	pub const VotingPeriod: BlockNumber = DAYS * 6;
+	pub const EnactmentPeriod: BlockNumber = DAYS * 14;
+
+	// Testing
+	// pub const VotingPeriod: BlockNumber = 50; // ~5 minutes
+	// pub const EnactmentPeriod: BlockNumber = 600; // ~60 minutes
+
+	pub const MinProposalStake: u128 = 100_000_000_000_000_000_000; // 100 * 1e18
+}
+
+impl pallet_subnet_democracy::Config for Runtime {
+	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	type SubnetVote = Network;
+	type Currency = Balances;
+	type MaxActivateProposals = ConstU32<1>;
+	type MaxDeactivateProposals = ConstU32<32>;
+	type MaxProposals = ConstU32<32>;
+	type VotingPeriod = VotingPeriod;
+	type EnactmentPeriod = EnactmentPeriod;
+	type MinProposalStake = MinProposalStake;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -291,9 +362,17 @@ mod runtime {
 	#[runtime::pallet_index(6)]
 	pub type Sudo = pallet_sudo;
 
-	// Include the custom logic from the pallet-template in the runtime.
 	#[runtime::pallet_index(7)]
-	pub type TemplateModule = pallet_template;
+	pub type Multisig = pallet_multisig;
+
+	#[runtime::pallet_index(8)]
+	pub type InsecureRandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
+
+	#[runtime::pallet_index(9)]
+	pub type Network = pallet_network;
+
+	#[runtime::pallet_index(10)]
+	pub type SubnetDemocracy = pallet_subnet_democracy;
 }
 
 /// The address format for describing accounts.
@@ -343,7 +422,8 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
-		[pallet_template, TemplateModule]
+		[pallet_network, Network]
+		[pallet_subnet_democracy, SubnetDemocracy]
 	);
 }
 
@@ -512,6 +592,38 @@ impl_runtime_apis! {
 		}
 		fn query_length_to_fee(length: u32) -> Balance {
 			TransactionPayment::length_to_fee(length)
+		}
+	}
+
+	impl network_custom_rpc_runtime_api::NetworkRuntimeApi<Block> for Runtime {
+		fn get_subnet_nodes(model_id: u32) -> Vec<u8> {
+			let result = Network::get_subnet_nodes(model_id);
+			result.encode()
+		}
+		fn get_subnet_nodes_included(model_id: u32) -> Vec<u8> {
+			let result = Network::get_subnet_nodes_included(model_id);
+			result.encode()
+		}
+		fn get_subnet_nodes_submittable(model_id: u32) -> Vec<u8> {
+			let result = Network::get_subnet_nodes_submittable(model_id);
+			result.encode()
+		}
+		fn get_subnet_nodes_model_unconfirmed_count(model_id: u32) -> u32 {
+			let result = Network::get_subnet_nodes_model_unconfirmed_count(model_id);
+			result
+			// result.encode()
+		}
+		fn get_consensus_data(model_id: u32, epoch: u32) -> Vec<u8> {
+			let result = Network::get_consensus_data(model_id, epoch);
+			result.encode()
+		}
+		fn get_accountant_data(model_id: u32, id: u32) -> Vec<u8> {
+			let result = Network::get_accountant_data(model_id, id);
+			result.encode()
+		}
+		fn get_minimum_subnet_nodes(subnet_id: u32, memory_mb: u128) -> u32 {
+			let result = Network::get_minimum_subnet_nodes(subnet_id, memory_mb);
+			result
 		}
 	}
 

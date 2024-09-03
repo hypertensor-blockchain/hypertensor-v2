@@ -113,5 +113,14 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			"key": Some(root_key),
 		},
+		// "pallet_network": {
+		// 	"subnet_path": "bigscience/bloom-560m".into(),
+		// 	"memory_mb": 560,
+		// 	"subnet_nodes": vec![],
+		// 	"accounts": vec![],
+		// 	"blank": {
+		// 		Some(root_key.clone())
+		// 	},
+		// },
 	})
 }

@@ -42,12 +42,21 @@ sp-session.workspace = true
 sp-storage.workspace = true
 sp-transaction-pool.workspace = true
 sp-version = { features = ["serde"], workspace = true }
+
 sp-genesis-builder.workspace = true
 frame-system-rpc-runtime-api.workspace = true
 pallet-transaction-payment-rpc-runtime-api.workspace = true
 frame-benchmarking = { optional = true, workspace = true }
 frame-system-benchmarking = { optional = true, workspace = true }
-pallet-template.workspace = true
+log.workspace = true
+pallet-network = { version = "4.0.0-dev", default-features = false, path = "../pallets/network" }
+pallet-insecure-randomness-collective-flip.workspace = true
+pallet-multisig.workspace = true
+network-custom-rpc-runtime-api = { version = "0.0.1", default-features = false, path = "../pallets/network/runtime-api" }
+pallet-subnet-democracy = { version = "4.0.0-dev", default-features = false, path = "../pallets/subnet-democracy" }
+
+serde.workspace = true
+serde_json.workspace = true
 
 [build-dependencies]
 substrate-wasm-builder = { optional = true, workspace = true, default-features = true }
@@ -71,10 +80,14 @@ std = [
 	"pallet-balances/std",
 	"pallet-grandpa/std",
 	"pallet-sudo/std",
-	"pallet-template/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
+	"pallet-insecure-randomness-collective-flip/std",
+	"pallet-multisig/std",
+	"network-custom-rpc-runtime-api/std",
+	"pallet-network/std",
+	"pallet-subnet-democracy/std",
 
 	"sp-api/std",
 	"sp-block-builder/std",
@@ -90,6 +103,9 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-version/std",
 
+	"log/std",
+	"serde_json/std",
+
 	"substrate-wasm-builder",
 ]
 
@@ -101,8 +117,8 @@ runtime-benchmarks = [
 	"pallet-balances/runtime-benchmarks",
 	"pallet-grandpa/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
-	"pallet-template/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
+	"pallet-subnet-democracy/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
 
@@ -115,8 +131,10 @@ try-runtime = [
 	"pallet-balances/try-runtime",
 	"pallet-grandpa/try-runtime",
 	"pallet-sudo/try-runtime",
-	"pallet-template/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"sp-runtime/try-runtime",
+	"pallet-insecure-randomness-collective-flip/try-runtime",
+	"pallet-network/try-runtime",
+	"pallet-multisig/try-runtime",
 ]

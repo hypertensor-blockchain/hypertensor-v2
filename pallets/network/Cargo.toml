@@ -1,7 +1,7 @@
 [package]
-name = "pallet-template"
+name = "pallet-network"
 description = "FRAME pallet template for defining custom runtime logic. (polkadot v1.15.0)"
-version = "0.1.0"
+version = "4.0.0-dev"
 license = "Unlicense"
 authors.workspace = true
 homepage.workspace = true
@@ -22,27 +22,42 @@ scale-info = { features = [
 frame-benchmarking = { optional = true, workspace = true }
 frame-support.workspace = true
 frame-system.workspace = true
+strum = { version = "0.26.3", features = ["derive"], default-features = false }
+strum_macros = { version = "0.26.3", default-features = false }
+pallet-balances.workspace = true
+log.workspace = true
+serde = { features = [
+	"derive",
+], workspace = true }
+serde_json.workspace = true
+pallet-insecure-randomness-collective-flip.workspace = true
+sp-std.workspace = true
+sp-core = { features = ["serde"], workspace = true }
+sp-runtime = { workspace = true }
 
 [dev-dependencies]
-sp-core = { default-features = true, workspace = true }
 sp-io = { default-features = true, workspace = true }
-sp-runtime = { default-features = true, workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"codec/std",
 	"frame-benchmarking?/std",
+	"sp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
 	"scale-info/std",
+	"pallet-balances/std",
+	"log/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
+	"pallet-balances/try-runtime",
 ]
