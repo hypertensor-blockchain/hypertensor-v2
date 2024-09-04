@@ -18,12 +18,12 @@ use crate as pallet_admin;
 use frame_support::{
   parameter_types,
   traits::Everything,
-  PalletId
+  PalletId,
+  derive_impl
 };
 use frame_system as system;
 use sp_core::{ConstU128, ConstU32, ConstU64, H256, U256};
 use sp_runtime::BuildStorage;
-use frame_support::sp_tracing;
 use sp_runtime::{
 	traits::{
 		BlakeTwo256, IdentifyAccount, Verify, IdentityLookup, AccountIdLookup
@@ -91,6 +91,8 @@ impl pallet_balances::Config for Test {
   type RuntimeEvent = RuntimeEvent;
   type DustRemoval = ();
   type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
+  // type AccountStore = AccountData<u128>;
+  // type AccountStore = StoredMap<Self::AccountId, AccountData<Self::Balance>>;
   type AccountStore = System;
   type MaxLocks = ();
   type WeightInfo = ();
@@ -98,11 +100,41 @@ impl pallet_balances::Config for Test {
   type ReserveIdentifier = [u8; 8];
   type RuntimeHoldReason = ();
   type FreezeIdentifier = ();
-  type MaxHolds = ();
+  // type MaxHolds = ();
   type MaxFreezes = ();
+  type RuntimeFreezeReason = ();
 }
 
-impl system::Config for Test {
+// impl system::Config for Test {
+//   type BaseCallFilter = Everything;
+//   type BlockWeights = ();
+//   type BlockLength = ();
+//   type Block = Block;
+//   type DbWeight = ();
+//   type RuntimeOrigin = RuntimeOrigin;
+//   type RuntimeCall = RuntimeCall;
+//   type Nonce = u64;
+//   type Hash = H256;
+//   type Hashing = BlakeTwo256;
+//   // type AccountId = U256;
+//   type AccountId = AccountId;
+//   // type Lookup = IdentityLookup<Self::AccountId>;
+//   type Lookup = AccountIdLookup<AccountId, ()>;
+//   type RuntimeEvent = RuntimeEvent;
+//   type BlockHashCount = BlockHashCount;
+//   type Version = ();
+//   type PalletInfo = PalletInfo;
+//   type AccountData = pallet_balances::AccountData<u128>;
+//   type OnNewAccount = ();
+//   type OnKilledAccount = ();
+//   type SystemWeightInfo = ();
+//   type SS58Prefix = SS58Prefix;
+//   type OnSetCode = ();
+//   type MaxConsumers = frame_support::traits::ConstU32<16>;
+// }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
+impl frame_system::Config for Test {
   type BaseCallFilter = Everything;
   type BlockWeights = ();
   type BlockLength = ();
@@ -113,9 +145,7 @@ impl system::Config for Test {
   type Nonce = u64;
   type Hash = H256;
   type Hashing = BlakeTwo256;
-  // type AccountId = U256;
   type AccountId = AccountId;
-  // type Lookup = IdentityLookup<Self::AccountId>;
   type Lookup = AccountIdLookup<AccountId, ()>;
   type RuntimeEvent = RuntimeEvent;
   type BlockHashCount = BlockHashCount;
@@ -143,10 +173,6 @@ impl pallet_network::Config for Test {
   type EpochLength = EpochLength;
   type StringLimit = ConstU32<100>;
 	type InitialTxRateLimit = ConstU64<0>;
-  type SecsPerBlock = ConstU64<{ SECS_PER_BLOCK as u64 }>;
-	type Year = ConstU64<{ YEAR as u64 }>;
-  type OffchainSignature = Signature;
-	type OffchainPublic = AccountPublic;
   type Randomness = InsecureRandomnessCollectiveFlip;
 	type PalletId = NetworkPalletId;
   type SubnetInitializationCost = SubnetInitializationCost;

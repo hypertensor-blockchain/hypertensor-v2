@@ -3,6 +3,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+pub mod impls;
 extern crate alloc;
 use alloc::{vec, vec::Vec};
 use pallet_grandpa::AuthorityId as GrandpaId;
@@ -50,6 +51,8 @@ pub use sp_runtime::{Perbill, Permill};
 
 pub use pallet_network;
 pub use pallet_subnet_democracy;
+pub use pallet_admin;
+pub use pallet_rewards;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -131,6 +134,10 @@ pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
+pub const YEAR: BlockNumber = DAYS * 365;
+pub const BLOCKS_PER_HALVING: BlockNumber = YEAR * 2;
+pub const TARGET_MAX_TOTAL_SUPPLY: u128 = 2_800_000_000_000_000_000_000_000;
+pub const INITIAL_REWARD_PER_BLOCK: u128 = (TARGET_MAX_TOTAL_SUPPLY / 2) / BLOCKS_PER_HALVING as u128;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -301,10 +308,10 @@ parameter_types! {
 	// pub const EnactmentPeriod: BlockNumber = DAYS * 7;
 
 	// Testnet
-	pub const VotingPeriod: BlockNumber = DAYS * 6;
+	pub const VotingPeriod: BlockNumber = DAYS * 4;
 	pub const EnactmentPeriod: BlockNumber = DAYS * 14;
 
-	// Testing
+	// Local
 	// pub const VotingPeriod: BlockNumber = 50; // ~5 minutes
 	// pub const EnactmentPeriod: BlockNumber = 600; // ~60 minutes
 
@@ -322,6 +329,42 @@ impl pallet_subnet_democracy::Config for Runtime {
 	type VotingPeriod = VotingPeriod;
 	type EnactmentPeriod = EnactmentPeriod;
 	type MinProposalStake = MinProposalStake;
+}
+
+pub struct AuraAccountAdapter;
+impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
+	fn find_author<'a, I>(digests: I) -> Option<AccountId>
+		where I: 'a + IntoIterator<Item=(frame_support::ConsensusEngineId, &'a [u8])>
+	{
+		pallet_aura::AuraAuthorId::<Runtime>::find_author(digests).and_then(|k| {
+			AccountId::try_from(k.as_ref()).ok()
+		})
+	}
+}
+
+impl pallet_authorship::Config for Runtime {
+	type FindAuthor = AuraAccountAdapter;
+	type EventHandler =  ();
+}
+
+parameter_types! {
+	pub const HalvingInterval: BlockNumber = BLOCKS_PER_HALVING;
+	pub const InitialBlockSubsidy: u128 = INITIAL_REWARD_PER_BLOCK;
+}
+
+impl pallet_rewards::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type FindAuthor = AuraAccountAdapter;
+	type HalvingInterval = HalvingInterval;
+	type InitialBlockSubsidy = InitialBlockSubsidy;
+	type IncreaseStakeVault = Network;
+}
+
+impl pallet_admin::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type NetworkAdminInterface = Network;
+	type SubnetDemocracyAdminInterface = SubnetDemocracy;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -363,16 +406,25 @@ mod runtime {
 	pub type Sudo = pallet_sudo;
 
 	#[runtime::pallet_index(7)]
-	pub type Multisig = pallet_multisig;
+	pub type Authorship = pallet_authorship;
 
 	#[runtime::pallet_index(8)]
-	pub type InsecureRandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
+	pub type Multisig = pallet_multisig;
 
 	#[runtime::pallet_index(9)]
-	pub type Network = pallet_network;
+	pub type InsecureRandomnessCollectiveFlip = pallet_insecure_randomness_collective_flip;
 
 	#[runtime::pallet_index(10)]
+	pub type Network = pallet_network;
+
+	#[runtime::pallet_index(11)]
 	pub type SubnetDemocracy = pallet_subnet_democracy;
+
+	#[runtime::pallet_index(12)]
+	pub type Rewards = pallet_rewards;
+
+	#[runtime::pallet_index(13)]
+	pub type Admin = pallet_admin;
 }
 
 /// The address format for describing accounts.

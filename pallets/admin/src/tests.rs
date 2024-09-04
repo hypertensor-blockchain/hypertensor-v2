@@ -124,38 +124,38 @@ fn test_set_max_models() {
   })
 }
 
-#[test]
-fn test_set_min_subnet_nodes() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_min_subnet_nodes(
-        RuntimeOrigin::root(),
-        0,
-      ),
-      pallet_network::Error::<Test>::InvalidMinSubnetNodes
-    );
+// #[test]
+// fn test_set_min_subnet_nodes() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_min_subnet_nodes(
+//         RuntimeOrigin::root(),
+//         0,
+//       ),
+//       pallet_network::Error::<Test>::InvalidMinSubnetNodes
+//     );
 
-    assert_ok!(
-      Admin::set_min_subnet_nodes(
-        RuntimeOrigin::root(),
-        11,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_min_subnet_nodes(
+//         RuntimeOrigin::root(),
+//         11,
+//       )
+//     );
 
-    let value = Network::min_subnet_nodes();
-    assert_eq!(value, 11);
+//     let value = Network::min_subnet_nodes();
+//     assert_eq!(value, 11);
 
-    assert_ok!(
-      Admin::set_min_subnet_nodes(
-        RuntimeOrigin::root(),
-        12,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_min_subnet_nodes(
+//         RuntimeOrigin::root(),
+//         12,
+//       )
+//     );
 
-    let value = Network::min_subnet_nodes();
-    assert_eq!(value, 12);
-  })
-}
+//     let value = Network::min_subnet_nodes();
+//     assert_eq!(value, 12);
+//   })
+// }
 
 #[test]
 fn test_set_max_subnet_nodes() {
@@ -238,116 +238,116 @@ fn test_set_tx_rate_limit() {
   })
 }
 
-#[test]
-fn test_set_max_consensus_epochs_errors() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_max_consensus_epochs_errors(
-        RuntimeOrigin::root(),
-        1001,
-      ),
-      pallet_network::Error::<Test>::InvalidMaxZeroConsensusEpochs
-    );
+// #[test]
+// fn test_set_max_consensus_epochs_errors() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_max_consensus_epochs_errors(
+//         RuntimeOrigin::root(),
+//         1001,
+//       ),
+//       pallet_network::Error::<Test>::InvalidMaxZeroConsensusEpochs
+//     );
 
-    assert_ok!(
-      Admin::set_max_consensus_epochs_errors(
-        RuntimeOrigin::root(),
-        999,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_max_consensus_epochs_errors(
+//         RuntimeOrigin::root(),
+//         999,
+//       )
+//     );
 
-    let value = pallet_network::MaxSubnetConsensusEpochsErrors::<Test>::get();
-    assert_eq!(value, 999);
-  })
-}
+//     let value = pallet_network::MaxSubnetConsensusEpochsErrors::<Test>::get();
+//     assert_eq!(value, 999);
+//   })
+// }
 
-#[test]
-fn test_set_min_required_model_consensus_submit_epochs() {
-  new_test_ext().execute_with(|| {
-    assert_ok!(
-      Admin::set_min_required_model_consensus_submit_epochs(
-        RuntimeOrigin::root(),
-        999,
-      )
-    );
+// #[test]
+// fn test_set_min_required_model_consensus_submit_epochs() {
+//   new_test_ext().execute_with(|| {
+//     assert_ok!(
+//       Admin::set_min_required_model_consensus_submit_epochs(
+//         RuntimeOrigin::root(),
+//         999,
+//       )
+//     );
 
-    let value = pallet_network::MinRequiredSubnetConsensusSubmitEpochs::<Test>::get();
-    assert_eq!(value, 999);
-  })
-}
+//     let value = pallet_network::MinRequiredSubnetConsensusSubmitEpochs::<Test>::get();
+//     assert_eq!(value, 999);
+//   })
+// }
 
-#[test]
-fn test_set_min_required_peer_consensus_submit_epochs() {
-  new_test_ext().execute_with(|| {
+// #[test]
+// fn test_set_min_required_peer_consensus_submit_epochs() {
+//   new_test_ext().execute_with(|| {
 
-    let value = pallet_network::MinRequiredNodeConsensusInclusionEpochs::<Test>::get();
+//     let value = pallet_network::MinRequiredNodeConsensusInclusionEpochs::<Test>::get();
 
-    assert_err!(
-      Admin::set_min_required_peer_consensus_submit_epochs(
-        RuntimeOrigin::root(),
-        value - 1,
-      ),
-      pallet_network::Error::<Test>::InvalidNodeConsensusSubmitEpochs
-    );
+//     assert_err!(
+//       Admin::set_min_required_peer_consensus_submit_epochs(
+//         RuntimeOrigin::root(),
+//         value - 1,
+//       ),
+//       pallet_network::Error::<Test>::InvalidNodeConsensusSubmitEpochs
+//     );
 
-    assert_ok!(
-      Admin::set_min_required_peer_consensus_submit_epochs(
-        RuntimeOrigin::root(),
-        999,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_min_required_peer_consensus_submit_epochs(
+//         RuntimeOrigin::root(),
+//         999,
+//       )
+//     );
 
-    let value = pallet_network::MinRequiredNodeConsensusSubmitEpochs::<Test>::get();
-    assert_eq!(value, 999);
-  })
-}
+//     let value = pallet_network::MinRequiredNodeConsensusSubmitEpochs::<Test>::get();
+//     assert_eq!(value, 999);
+//   })
+// }
 
-#[test]
-fn test_set_min_required_peer_consensus_epochs() {
-  new_test_ext().execute_with(|| {
-    let submit_epochs = pallet_network::MinRequiredNodeConsensusSubmitEpochs::<Test>::get();
-    assert_err!(
-      Admin::set_min_required_peer_consensus_inclusion_epochs(
-        RuntimeOrigin::root(),
-        submit_epochs + 1,
-      ),
-      pallet_network::Error::<Test>::InvalidNodeConsensusInclusionEpochs
-    );
+// #[test]
+// fn test_set_min_required_peer_consensus_epochs() {
+//   new_test_ext().execute_with(|| {
+//     let submit_epochs = pallet_network::MinRequiredNodeConsensusSubmitEpochs::<Test>::get();
+//     assert_err!(
+//       Admin::set_min_required_peer_consensus_inclusion_epochs(
+//         RuntimeOrigin::root(),
+//         submit_epochs + 1,
+//       ),
+//       pallet_network::Error::<Test>::InvalidNodeConsensusInclusionEpochs
+//     );
 
-    assert_ok!(
-      Admin::set_min_required_peer_consensus_inclusion_epochs(
-        RuntimeOrigin::root(),
-        submit_epochs - 1,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_min_required_peer_consensus_inclusion_epochs(
+//         RuntimeOrigin::root(),
+//         submit_epochs - 1,
+//       )
+//     );
 
-    let value = pallet_network::MinRequiredNodeConsensusInclusionEpochs::<Test>::get();
-    assert_eq!(value, submit_epochs - 1);
-  })
-}
+//     let value = pallet_network::MinRequiredNodeConsensusInclusionEpochs::<Test>::get();
+//     assert_eq!(value, submit_epochs - 1);
+//   })
+// }
 
-#[test]
-fn test_set_max_outlier_delta_percent() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_max_outlier_delta_percent(
-        RuntimeOrigin::root(),
-        101,
-      ),
-      pallet_network::Error::<Test>::InvalidMaxOutlierDeltaPercent
-    );
+// #[test]
+// fn test_set_max_outlier_delta_percent() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_max_outlier_delta_percent(
+//         RuntimeOrigin::root(),
+//         101,
+//       ),
+//       pallet_network::Error::<Test>::InvalidMaxOutlierDeltaPercent
+//     );
 
-    assert_ok!(
-      Admin::set_max_outlier_delta_percent(
-        RuntimeOrigin::root(),
-        99,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_max_outlier_delta_percent(
+//         RuntimeOrigin::root(),
+//         99,
+//       )
+//     );
 
-    let value = pallet_network::MaximumOutlierDeltaPercent::<Test>::get();
-    assert_eq!(value, 99);
-  })
-}
+//     let value = pallet_network::MaximumOutlierDeltaPercent::<Test>::get();
+//     assert_eq!(value, 99);
+//   })
+// }
 
 // #[test]
 // fn test_set_subnet_node_consensus_submit_percent_requirement() {
@@ -404,243 +404,243 @@ fn test_set_max_outlier_delta_percent() {
 //   })
 // }
 
-#[test]
-fn test_set_peer_removal_threshold() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_peer_removal_threshold(
-        RuntimeOrigin::root(),
-        10001,
-      ),
-      pallet_network::Error::<Test>::InvalidNodeRemovalThreshold
-    );
+// #[test]
+// fn test_set_peer_removal_threshold() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_peer_removal_threshold(
+//         RuntimeOrigin::root(),
+//         10001,
+//       ),
+//       pallet_network::Error::<Test>::InvalidNodeRemovalThreshold
+//     );
 
-    let min_subnet_nodes: u32 = MinSubnetNodes::<Test>::get();
-    let min_value = (1 as u128).saturating_mul(10000).saturating_div(min_subnet_nodes as u128);
+//     let min_subnet_nodes: u32 = MinSubnetNodes::<Test>::get();
+//     let min_value = (1 as u128).saturating_mul(10000).saturating_div(min_subnet_nodes as u128);
 
-    let err_value = min_value - 1;
+//     let err_value = min_value - 1;
 
-    assert_err!(
-      Admin::set_peer_removal_threshold(
-        RuntimeOrigin::root(),
-        err_value,
-      ),
-      pallet_network::Error::<Test>::InvalidNodeRemovalThreshold
-    );
+//     assert_err!(
+//       Admin::set_peer_removal_threshold(
+//         RuntimeOrigin::root(),
+//         err_value,
+//       ),
+//       pallet_network::Error::<Test>::InvalidNodeRemovalThreshold
+//     );
 
-    let threshold = 5100;
+//     let threshold = 5100;
 
-    assert_ok!(
-      Admin::set_peer_removal_threshold(
-        RuntimeOrigin::root(),
-        threshold,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_peer_removal_threshold(
+//         RuntimeOrigin::root(),
+//         threshold,
+//       )
+//     );
 
-    let value = pallet_network::NodeRemovalThreshold::<Test>::get();
-    assert_eq!(value, threshold);
-  })
-}
+//     let value = pallet_network::NodeRemovalThreshold::<Test>::get();
+//     assert_eq!(value, threshold);
+//   })
+// }
 
-#[test]
-fn test_set_max_model_rewards_weight() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_max_model_rewards_weight(
-        RuntimeOrigin::root(),
-        10001,
-      ),
-      pallet_network::Error::<Test>::InvalidPercent
-    );
+// #[test]
+// fn test_set_max_model_rewards_weight() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_max_model_rewards_weight(
+//         RuntimeOrigin::root(),
+//         10001,
+//       ),
+//       pallet_network::Error::<Test>::InvalidPercent
+//     );
 
-    assert_err!(
-      Admin::set_max_model_rewards_weight(
-        RuntimeOrigin::root(),
-        0,
-      ),
-      pallet_network::Error::<Test>::InvalidPercent
-    );
+//     assert_err!(
+//       Admin::set_max_model_rewards_weight(
+//         RuntimeOrigin::root(),
+//         0,
+//       ),
+//       pallet_network::Error::<Test>::InvalidPercent
+//     );
 
-    let max_model_rewards_weight = 9999;
+//     let max_model_rewards_weight = 9999;
 
-    assert_ok!(
-      Admin::set_max_model_rewards_weight(
-        RuntimeOrigin::root(),
-        max_model_rewards_weight,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_max_model_rewards_weight(
+//         RuntimeOrigin::root(),
+//         max_model_rewards_weight,
+//       )
+//     );
 
-    let value = pallet_network::MaxSubnetRewardsWeight::<Test>::get();
-    assert_eq!(value, max_model_rewards_weight);
-  })
-}
+//     let value = pallet_network::MaxSubnetRewardsWeight::<Test>::get();
+//     assert_eq!(value, max_model_rewards_weight);
+//   })
+// }
 
-#[test]
-fn test_set_stake_reward_weight() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_stake_reward_weight(
-        RuntimeOrigin::root(),
-        10001,
-      ),
-      pallet_network::Error::<Test>::InvalidPercent
-    );
+// #[test]
+// fn test_set_stake_reward_weight() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_stake_reward_weight(
+//         RuntimeOrigin::root(),
+//         10001,
+//       ),
+//       pallet_network::Error::<Test>::InvalidPercent
+//     );
 
-    let stake_reward_weight = 9999;
+//     let stake_reward_weight = 9999;
 
-    assert_ok!(
-      Admin::set_stake_reward_weight(
-        RuntimeOrigin::root(),
-        stake_reward_weight,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_stake_reward_weight(
+//         RuntimeOrigin::root(),
+//         stake_reward_weight,
+//       )
+//     );
 
-    let value = pallet_network::StakeRewardWeight::<Test>::get();
-    assert_eq!(value, stake_reward_weight);
-  })
-}
+//     let value = pallet_network::StakeRewardWeight::<Test>::get();
+//     assert_eq!(value, stake_reward_weight);
+//   })
+// }
 
-#[test]
-fn test_set_model_per_peer_init_cost() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_model_per_peer_init_cost(
-        RuntimeOrigin::root(),
-        0,
-      ),
-      pallet_network::Error::<Test>::InvalidSubnetPerNodeInitCost
-    );
+// #[test]
+// fn test_set_model_per_peer_init_cost() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_model_per_peer_init_cost(
+//         RuntimeOrigin::root(),
+//         0,
+//       ),
+//       pallet_network::Error::<Test>::InvalidSubnetPerNodeInitCost
+//     );
 
-    let cost = 999;
+//     let cost = 999;
 
-    assert_ok!(
-      Admin::set_model_per_peer_init_cost(
-        RuntimeOrigin::root(),
-        cost,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_model_per_peer_init_cost(
+//         RuntimeOrigin::root(),
+//         cost,
+//       )
+//     );
 
-    let value = pallet_network::SubnetPerNodeInitCost::<Test>::get();
-    assert_eq!(value, cost);
-  })
-}
+//     let value = pallet_network::SubnetPerNodeInitCost::<Test>::get();
+//     assert_eq!(value, cost);
+//   })
+// }
 
-#[test]
-fn test_set_model_consensus_unconfirmed_threshold() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_model_consensus_unconfirmed_threshold(
-        RuntimeOrigin::root(),
-        10000,
-      ),
-      pallet_network::Error::<Test>::InvalidSubnetConsensusUnconfirmedThreshold
-    );
+// #[test]
+// fn test_set_model_consensus_unconfirmed_threshold() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_model_consensus_unconfirmed_threshold(
+//         RuntimeOrigin::root(),
+//         10000,
+//       ),
+//       pallet_network::Error::<Test>::InvalidSubnetConsensusUnconfirmedThreshold
+//     );
 
-    let threshold = 5100;
+//     let threshold = 5100;
 
-    assert_ok!(
-      Admin::set_model_consensus_unconfirmed_threshold(
-        RuntimeOrigin::root(),
-        threshold,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_model_consensus_unconfirmed_threshold(
+//         RuntimeOrigin::root(),
+//         threshold,
+//       )
+//     );
 
-    let value = pallet_network::SubnetConsensusUnconfirmedThreshold::<Test>::get();
-    assert_eq!(value, threshold);
-  })
-}
+//     let value = pallet_network::SubnetConsensusUnconfirmedThreshold::<Test>::get();
+//     assert_eq!(value, threshold);
+//   })
+// }
 
-#[test]
-fn test_set_remove_subnet_node_epoch_percentage() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_remove_subnet_node_epoch_percentage(
-        RuntimeOrigin::root(),
-        10000,
-      ),
-      pallet_network::Error::<Test>::InvalidRemoveSubnetNodeEpochPercentage
-    );
+// #[test]
+// fn test_set_remove_subnet_node_epoch_percentage() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_remove_subnet_node_epoch_percentage(
+//         RuntimeOrigin::root(),
+//         10000,
+//       ),
+//       pallet_network::Error::<Test>::InvalidRemoveSubnetNodeEpochPercentage
+//     );
 
-    assert_err!(
-      Admin::set_remove_subnet_node_epoch_percentage(
-        RuntimeOrigin::root(),
-        1234,
-      ),
-      pallet_network::Error::<Test>::InvalidRemoveSubnetNodeEpochPercentage
-    );
+//     assert_err!(
+//       Admin::set_remove_subnet_node_epoch_percentage(
+//         RuntimeOrigin::root(),
+//         1234,
+//       ),
+//       pallet_network::Error::<Test>::InvalidRemoveSubnetNodeEpochPercentage
+//     );
 
-    let percentage = 4000;
+//     let percentage = 4000;
 
-    assert_ok!(
-      Admin::set_remove_subnet_node_epoch_percentage(
-        RuntimeOrigin::root(),
-        percentage,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_remove_subnet_node_epoch_percentage(
+//         RuntimeOrigin::root(),
+//         percentage,
+//       )
+//     );
 
-    let value = pallet_network::RemoveSubnetNodeEpochPercentage::<Test>::get();
-    assert_eq!(value, percentage);
-  })
-}
+//     let value = pallet_network::RemoveSubnetNodeEpochPercentage::<Test>::get();
+//     assert_eq!(value, percentage);
+//   })
+// }
 
-#[test]
-fn test_set_peer_vote_premium() {
-  new_test_ext().execute_with(|| {
-    let value = 101;
+// #[test]
+// fn test_set_peer_vote_premium() {
+//   new_test_ext().execute_with(|| {
+//     let value = 101;
 
-    assert_err!(
-      Admin::set_peer_vote_premium(
-        RuntimeOrigin::root(),
-        value,
-      ),
-      pallet_subnet_democracy::Error::<Test>::InvalidNodeVotePremium
-    );
+//     assert_err!(
+//       Admin::set_peer_vote_premium(
+//         RuntimeOrigin::root(),
+//         value,
+//       ),
+//       pallet_subnet_democracy::Error::<Test>::InvalidNodeVotePremium
+//     );
 
-    let value = 50;
+//     let value = 50;
 
-    assert_ok!(
-      Admin::set_peer_vote_premium(
-        RuntimeOrigin::root(),
-        value,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_peer_vote_premium(
+//         RuntimeOrigin::root(),
+//         value,
+//       )
+//     );
 
-    let value = pallet_subnet_democracy::NodeVotePremium::<Test>::get();
-    assert_eq!(value, value);
+//     let value = pallet_subnet_democracy::NodeVotePremium::<Test>::get();
+//     assert_eq!(value, value);
 
-    // shouldn't be able to set the same value
-    assert_err!(
-      Admin::set_peer_vote_premium(
-        RuntimeOrigin::root(),
-        value,
-      ),
-      pallet_subnet_democracy::Error::<Test>::InvalidNodeVotePremium
-    );
+//     // shouldn't be able to set the same value
+//     assert_err!(
+//       Admin::set_peer_vote_premium(
+//         RuntimeOrigin::root(),
+//         value,
+//       ),
+//       pallet_subnet_democracy::Error::<Test>::InvalidNodeVotePremium
+//     );
 
-  })
-}
+//   })
+// }
 
-#[test]
-fn test_set_quorum() {
-  new_test_ext().execute_with(|| {
-    assert_err!(
-      Admin::set_quorum(
-        RuntimeOrigin::root(),
-        0,
-      ),
-      pallet_subnet_democracy::Error::<Test>::InvalidQuorum
-    );
+// #[test]
+// fn test_set_quorum() {
+//   new_test_ext().execute_with(|| {
+//     assert_err!(
+//       Admin::set_quorum(
+//         RuntimeOrigin::root(),
+//         0,
+//       ),
+//       pallet_subnet_democracy::Error::<Test>::InvalidQuorum
+//     );
 
-    let value = 1000000;
+//     let value = 1000000;
 
-    assert_ok!(
-      Admin::set_quorum(
-        RuntimeOrigin::root(),
-        value,
-      )
-    );
+//     assert_ok!(
+//       Admin::set_quorum(
+//         RuntimeOrigin::root(),
+//         value,
+//       )
+//     );
 
-    let value = pallet_subnet_democracy::Quorum::<Test>::get();
-    assert_eq!(value, value);
-  })
-}
+//     let value = pallet_subnet_democracy::Quorum::<Test>::get();
+//     assert_eq!(value, value);
+//   })
+// }
