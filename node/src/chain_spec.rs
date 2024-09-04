@@ -68,9 +68,17 @@ pub fn get_test_accounts() -> Vec<AccountId> {
 	test_accounts
 }
 
+pub fn get_testnet_faucets() -> Vec<AccountId> {
+	let faucets = vec![
+		AccountId::from_ss58check("5FWa18zzvnACNpM7WmwZqhtBKeeG3e6XvKvoFjxY1QHp4HwY").unwrap()
+	];
+	faucets
+}
+
 pub fn development_config() -> Result<ChainSpec, String> {
 	let mut accounts = (0..255).map(|x| get_account_id_from_seed::<sr25519::Public>(&x.to_string())).collect::<Vec<_>>();
 	accounts.extend(get_test_accounts());
+	accounts.extend(get_testnet_faucets());
 	Ok(ChainSpec::builder(
 		WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?,
 		None,
@@ -93,6 +101,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	let mut accounts = (0..255).map(|x| get_account_id_from_seed::<sr25519::Public>(&x.to_string())).collect::<Vec<_>>();
 	accounts.extend(get_test_accounts());
+	accounts.extend(get_testnet_faucets());
 	Ok(ChainSpec::builder(
 		WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?,
 		None,
@@ -115,6 +124,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 pub fn gavin_config() -> Result<ChainSpec, String> {
 	let mut accounts = (0..255).map(|x| get_account_id_from_seed::<sr25519::Public>(&x.to_string())).collect::<Vec<_>>();
 	accounts.extend(get_test_accounts());
+	accounts.extend(get_testnet_faucets());
 	Ok(ChainSpec::builder(
 		WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?,
 		None,
@@ -168,7 +178,7 @@ fn testnet_genesis(
 	serde_json::json!({
 		"balances": {
 			// Configure endowed accounts with initial balance of 1 << 60.
-			"balances": endowed_accounts.iter().cloned().map(|k| (k, 10000000000000000000000_u128)).collect::<Vec<_>>(),
+			"balances": endowed_accounts.iter().cloned().map(|k| (k, 10000000000000000000000000_u128)).collect::<Vec<_>>(),
 		},
 		"aura": {
 			"authorities": initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
