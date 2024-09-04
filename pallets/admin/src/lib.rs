@@ -28,8 +28,8 @@ use frame_support::{
   weights::Weight,
   pallet_prelude::DispatchResult,
   ensure,
-  dispatch::Vec
 };
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;
@@ -115,7 +115,9 @@ pub mod pallet {
     #[pallet::weight(0)]
     pub fn set_min_subnet_nodes(origin: OriginFor<T>, value: u32) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_min_subnet_nodes(value)
+      // T::NetworkAdminInterface::set_min_subnet_nodes(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(4)]
@@ -143,112 +145,144 @@ pub mod pallet {
     #[pallet::weight(0)]
     pub fn set_max_consensus_epochs_errors(origin: OriginFor<T>, value: u32) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_max_consensus_epochs_errors(value)
+      // T::NetworkAdminInterface::set_max_consensus_epochs_errors(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(8)]
     #[pallet::weight(0)]
     pub fn set_min_required_model_consensus_submit_epochs(origin: OriginFor<T>, value: u64) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_min_required_model_consensus_submit_epochs(value)
+      // T::NetworkAdminInterface::set_min_required_model_consensus_submit_epochs(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(9)]
     #[pallet::weight(0)]
     pub fn set_min_required_peer_consensus_submit_epochs(origin: OriginFor<T>, value: u64) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_min_required_peer_consensus_submit_epochs(value)
+      // T::NetworkAdminInterface::set_min_required_peer_consensus_submit_epochs(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(10)]
     #[pallet::weight(0)]
     pub fn set_min_required_peer_consensus_inclusion_epochs(origin: OriginFor<T>, value: u64) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_min_required_peer_consensus_inclusion_epochs(value)
+      // T::NetworkAdminInterface::set_min_required_peer_consensus_inclusion_epochs(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(11)]
     #[pallet::weight(0)]
     pub fn set_min_required_peer_consensus_dishonesty_epochs(origin: OriginFor<T>, value: u64) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_min_required_peer_consensus_dishonesty_epochs(value)
+      // T::NetworkAdminInterface::set_min_required_peer_consensus_dishonesty_epochs(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(12)]
     #[pallet::weight(0)]
     pub fn set_max_outlier_delta_percent(origin: OriginFor<T>, value: u8) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_max_outlier_delta_percent(value)
+      // T::NetworkAdminInterface::set_max_outlier_delta_percent(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(13)]
     #[pallet::weight(0)]
     pub fn set_subnet_node_consensus_submit_percent_requirement(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_subnet_node_consensus_submit_percent_requirement(value)
+      // T::NetworkAdminInterface::set_subnet_node_consensus_submit_percent_requirement(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(14)]
     #[pallet::weight(0)]
     pub fn set_consensus_blocks_interval(origin: OriginFor<T>, value: u64) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_consensus_blocks_interval(value)
+      // T::NetworkAdminInterface::set_consensus_blocks_interval(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(15)]
     #[pallet::weight(0)]
     pub fn set_peer_removal_threshold(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_peer_removal_threshold(value)
+      // T::NetworkAdminInterface::set_peer_removal_threshold(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(16)]
     #[pallet::weight(0)]
     pub fn set_max_model_rewards_weight(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_max_model_rewards_weight(value)
+      // T::NetworkAdminInterface::set_max_model_rewards_weight(value)
+      // Update
+      Ok(())
     }
     
     #[pallet::call_index(17)]
     #[pallet::weight(0)]
     pub fn set_stake_reward_weight(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_stake_reward_weight(value)
+      // T::NetworkAdminInterface::set_stake_reward_weight(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(18)]
     #[pallet::weight(0)]
     pub fn set_model_per_peer_init_cost(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_model_per_peer_init_cost(value)
+      // T::NetworkAdminInterface::set_model_per_peer_init_cost(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(19)]
     #[pallet::weight(0)]
     pub fn set_model_consensus_unconfirmed_threshold(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_model_consensus_unconfirmed_threshold(value)
+      // T::NetworkAdminInterface::set_model_consensus_unconfirmed_threshold(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(20)]
     #[pallet::weight(0)]
     pub fn set_remove_subnet_node_epoch_percentage(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::NetworkAdminInterface::set_remove_subnet_node_epoch_percentage(value)
+      // T::NetworkAdminInterface::set_remove_subnet_node_epoch_percentage(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(21)]
     #[pallet::weight(0)]
     pub fn set_peer_vote_premium(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::SubnetDemocracyAdminInterface::set_peer_vote_premium(value)
+      // T::SubnetDemocracyAdminInterface::set_peer_vote_premium(value)
+      // Update
+      Ok(())
     }
 
     #[pallet::call_index(22)]
     #[pallet::weight(0)]
     pub fn set_quorum(origin: OriginFor<T>, value: u128) -> DispatchResult {
       ensure_root(origin)?;
-      T::SubnetDemocracyAdminInterface::set_quorum(value)
+      // T::SubnetDemocracyAdminInterface::set_quorum(value)
+      // Update
+      Ok(())
     }
   }
 }

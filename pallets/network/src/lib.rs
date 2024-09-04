@@ -86,6 +86,7 @@ mod accountant;
 mod rewards;
 mod info;
 mod proposal;
+mod admin;
 
 // All pallet logic is defined in its own module and must be annotated by the `pallet` attribute.
 #[frame_support::pallet]
@@ -2035,6 +2036,7 @@ pub mod pallet {
 
 			// Reward validators and attestors... Shift node classes
 			if block >= epoch_length && block % epoch_length == 0 {
+				log::info!("Rewarding epoch");
 				let epoch: u64 = block / epoch_length;
 
 				// Reward subnets for the previous epoch
@@ -2050,6 +2052,7 @@ pub mod pallet {
 
 			// Run the block succeeding form consensus
 			if (block - 1) >= epoch_length && (block - 1) % epoch_length == 0 {
+				log::info!("Generating random validator");
 				let epoch: u64 = block / epoch_length;
 
 				// Choose validators and accountants for the current epoch

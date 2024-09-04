@@ -30,6 +30,7 @@ pallet-grandpa.workspace = true
 pallet-sudo.workspace = true
 pallet-timestamp.workspace = true
 pallet-transaction-payment.workspace = true
+pallet-authorship.workspace = true
 sp-api.workspace = true
 sp-block-builder.workspace = true
 sp-consensus-aura = { features = ["serde"], workspace = true }
@@ -54,6 +55,8 @@ pallet-insecure-randomness-collective-flip.workspace = true
 pallet-multisig.workspace = true
 network-custom-rpc-runtime-api = { version = "0.0.1", default-features = false, path = "../pallets/network/runtime-api" }
 pallet-subnet-democracy = { version = "4.0.0-dev", default-features = false, path = "../pallets/subnet-democracy" }
+pallet-admin = { version = "4.0.0-dev", default-features = false, path = "../pallets/admin" }
+pallet-rewards = { version = "4.0.0-dev", default-features = false, path = "../pallets/rewards" }
 
 serde.workspace = true
 serde_json.workspace = true
@@ -88,6 +91,9 @@ std = [
 	"network-custom-rpc-runtime-api/std",
 	"pallet-network/std",
 	"pallet-subnet-democracy/std",
+	"pallet-authorship/std",
+	"pallet-rewards/std",
+	"pallet-admin/std",
 
 	"sp-api/std",
 	"sp-block-builder/std",
