@@ -309,7 +309,7 @@ parameter_types! {
 
 	// Testnet
 	pub const VotingPeriod: BlockNumber = DAYS * 4;
-	pub const EnactmentPeriod: BlockNumber = DAYS * 14;
+	pub const EnactmentPeriod: BlockNumber = DAYS * 11;
 
 	// Local
 	// pub const VotingPeriod: BlockNumber = 50; // ~5 minutes
