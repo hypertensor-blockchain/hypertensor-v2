@@ -26,7 +26,6 @@ sp-runtime = { workspace = true }
 
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false }
-pallet-admin = { version = "4.0.0-dev", default-features = false, path = "../admin" }
 pallet-network = { version = "4.0.0-dev", default-features = false, path = "../network" }
 pallet-insecure-randomness-collective-flip.workspace = true
 

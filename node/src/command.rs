@@ -32,14 +32,15 @@ impl SubstrateCli for Cli {
 	}
 
 	fn copyright_start_year() -> i32 {
-		2017
+		2023
 	}
 
 	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
 		Ok(match id {
 			"dev" => Box::new(chain_spec::development_config()?),
 			"" | "local" => Box::new(chain_spec::local_testnet_config()?),
-			"gavin" => Box::new(chain_spec::gavin_config()?),
+			"gavin" => Box::new(chain_spec::testnet_gavin_config()?),
+			"tensor" => Box::new(chain_spec::testnet_tensor_config()?),
 			path =>
 				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 		})

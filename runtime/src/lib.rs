@@ -24,7 +24,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use frame_support::{
-	construct_runtime, derive_impl, parameter_types,
+	construct_runtime, derive_impl, parameter_types, ord_parameter_types,
 	traits::{
 		fungible::HoldConsideration,
 		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem,
@@ -45,7 +45,9 @@ pub use frame_support::{
 	StorageValue,
 	PalletId,
 	genesis_builder_helper::{build_state, get_preset},
+	storage::bounded_vec::BoundedVec,
 };
+
 pub use frame_system::EnsureRoot;
 pub use pallet_balances::Call as BalancesCall;
 pub use frame_system::Call as SystemCall;
@@ -54,10 +56,9 @@ use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+use pallet_network::DefaultSubnetNodeUniqueParamLimit;
 
 pub use pallet_network;
-// pub use pallet_subnet_democracy;
-pub use pallet_admin;
 pub use pallet_rewards;
 
 /// An index to a block.
@@ -144,6 +145,12 @@ pub const YEAR: BlockNumber = DAYS * 365;
 pub const BLOCKS_PER_HALVING: BlockNumber = YEAR * 2;
 pub const TARGET_MAX_TOTAL_SUPPLY: u128 = 2_800_000_000_000_000_000_000_000;
 pub const INITIAL_REWARD_PER_BLOCK: u128 = (TARGET_MAX_TOTAL_SUPPLY / 2) / BLOCKS_PER_HALVING as u128;
+
+pub const SECS_PER_BLOCK: u64 = 6000 / 1000;
+
+pub const EPOCH_LENGTH: u64 = 10;
+pub const BLOCKS_PER_EPOCH: u64 = SECS_PER_BLOCK * EPOCH_LENGTH;
+pub const EPOCHS_PER_YEAR: u64 = YEAR as u64 / BLOCKS_PER_EPOCH;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -349,7 +356,6 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 				RuntimeCall::Network(pallet_network::Call::add_to_delegate_stake { .. })
 				| RuntimeCall::Network(pallet_network::Call::transfer_delegate_stake { .. })
 				| RuntimeCall::Network(pallet_network::Call::remove_delegate_stake { .. })
-				| RuntimeCall::Network(pallet_network::Call::claim_delegate_stake_unbondings { .. })
 			),
 			// ProxyType::NonTransfer => !matches!(
 			// 	c,
@@ -441,6 +447,23 @@ impl pallet_scheduler::Config for Runtime {
 	type Preimages = Preimage;
 }
 
+parameter_types! {
+  pub const MaxWellKnownNodes: u32 = 8;
+  pub const MaxPeerIdLength: u32 = 128;
+}
+
+impl pallet_node_authorization::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxWellKnownNodes = MaxWellKnownNodes;
+	type MaxPeerIdLength = MaxPeerIdLength;
+	type AddOrigin = EnsureRoot<AccountId>;
+	type RemoveOrigin = EnsureRoot<AccountId>;
+	type SwapOrigin = EnsureRoot<AccountId>;
+	type ResetOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = ();
+}
+
+
 // /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 // /// This is used to limit the maximal weight of a single extrinsic.
 // const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
@@ -471,9 +494,8 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 
 parameter_types! {
 	pub const InitialTxRateLimit: u64 = 0;
-	pub const EpochLength: u64 = 10; // Testnet 690 blocks per erpoch / 69 mins per epoch, Local 10
+	pub const EpochLength: u64 = EPOCH_LENGTH; // Testnet 600 blocks per erpoch / 69 mins per epoch, Local 10
 	pub const NetworkPalletId: PalletId = PalletId(*b"/network");
-	pub const SubnetInitializationCost: u128 = 100_000_000_000_000_000_000;
 	pub const MinProposalStake: u128 = 1_000_000_000_000_000_000; // 1 * 1e18
 	pub const DelegateStakeCooldownEpochs: u64 = 100;
 	pub const StakeCooldownEpochs: u64 = 100;
@@ -486,13 +508,14 @@ impl pallet_network::Config for Runtime {
 	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
+	type MajorityCollectiveOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
+	type SuperMajorityCollectiveOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 4, 5>;
 	type EpochLength = EpochLength;
 	type StringLimit = ConstU32<12288>;
 	type InitialTxRateLimit = InitialTxRateLimit;
 // 	type OffchainSignature = Signature;
 // 	type OffchainPublic = AccountPublic;
 	type PalletId = NetworkPalletId;
-	type SubnetInitializationCost = SubnetInitializationCost;
   type DelegateStakeCooldownEpochs = DelegateStakeCooldownEpochs;
 	type DelegateStakeEpochsRemovalWindow = DelegateStakeEpochsRemovalWindow;
 	type MaxDelegateStakeUnlockings = MaxDelegateStakeUnlockings;
@@ -501,42 +524,6 @@ impl pallet_network::Config for Runtime {
 	type Randomness = InsecureRandomnessCollectiveFlip;
 	type MinProposalStake = MinProposalStake;
 }
-
-parameter_types! {
-	// Mainnet
-	// pub const VotingPeriod: BlockNumber = DAYS * 21;
-	// pub const EnactmentPeriod: BlockNumber = DAYS * 7;
-
-	// Testnet
-	pub const VotingPeriod: BlockNumber = DAYS * 13;
-	pub const EnactmentPeriod: BlockNumber = DAYS * 12;
-	pub const VerifyPeriod: BlockNumber = DAYS * 4;
-	pub const MinProposerStake: u128 = 100_000_000_000_000_000_000; // 100 * 1e18
-	pub const Quorum: u128 = 10_000_000_000_000_000_000_000; // 10,000 * 1e18
-	pub const CancelSlashPercent: u8 = 5;
-	pub const QuorumVotingPowerPercentage: u8 = 40;
-	// Local
-	// pub const VotingPeriod: BlockNumber = 50; // ~5 minutes
-	// pub const EnactmentPeriod: BlockNumber = 600; // ~60 minutes
-
-}
-
-// impl pallet_subnet_democracy::Config for Runtime {
-// 	type WeightInfo = ();
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type SubnetVote = Network;
-// 	type Currency = Balances;
-// 	type MaxActivateProposals = ConstU32<1>;
-// 	type MaxDeactivateProposals = ConstU32<32>;
-// 	type MaxProposals = ConstU32<32>;
-// 	type VotingPeriod = VotingPeriod;
-// 	type EnactmentPeriod = EnactmentPeriod;
-// 	type VerifyPeriod = VerifyPeriod;
-// 	type MinProposerStake = MinProposerStake;
-// 	type Quorum = Quorum;
-// 	type CancelSlashPercent = CancelSlashPercent;
-// 	type QuorumVotingPowerPercentage = QuorumVotingPowerPercentage;
-// }
 
 pub struct AuraAccountAdapter;
 impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
@@ -566,12 +553,6 @@ impl pallet_rewards::Config for Runtime {
 	type HalvingInterval = HalvingInterval;
 	type InitialBlockSubsidy = InitialBlockSubsidy;
 	type IncreaseStakeVault = Network;
-}
-
-impl pallet_admin::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type CollectiveOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
-	type NetworkAdminInterface = Network;
 }
 
 impl pallet_atomic_swap::Config for Runtime {
@@ -630,32 +611,29 @@ mod runtime {
 	#[runtime::pallet_index(10)]
 	pub type Network = pallet_network;
 
-	// #[runtime::pallet_index(11)]
-	// pub type SubnetDemocracy = pallet_subnet_democracy;
-
 	#[runtime::pallet_index(11)]
 	pub type Rewards = pallet_rewards;
 
 	#[runtime::pallet_index(12)]
-	pub type Admin = pallet_admin;
-
-	#[runtime::pallet_index(13)]
 	pub type Utility = pallet_utility;
 
-	#[runtime::pallet_index(14)]
+	#[runtime::pallet_index(13)]
 	pub type Proxy = pallet_proxy;
 
-	#[runtime::pallet_index(15)]
+	#[runtime::pallet_index(14)]
 	pub type Preimage = pallet_preimage;
 
-	#[runtime::pallet_index(16)]
+	#[runtime::pallet_index(15)]
 	pub type Scheduler = pallet_scheduler;
 
-	#[runtime::pallet_index(17)]
+	#[runtime::pallet_index(16)]
 	pub type Collective = pallet_collective::Pallet<Runtime, Instance1>;
 
-	#[runtime::pallet_index(18)]
+	#[runtime::pallet_index(17)]
 	pub type AtomicSwap = pallet_atomic_swap;
+
+	#[runtime::pallet_index(18)]
+	pub type NodeAuthorization = pallet_node_authorization;
 }
 
 /// The address format for describing accounts.
@@ -707,7 +685,6 @@ mod benches {
 		[pallet_sudo, Sudo]
 		[pallet_network, Network]
 		[pallet_collective, Collective]
-		// [pallet_subnet_democracy, SubnetDemocracy]
 	);
 }
 
@@ -900,10 +877,6 @@ impl_runtime_apis! {
 			let result = Network::get_consensus_data(subnet_id, epoch);
 			result.encode()
 		}
-		fn get_accountant_data(subnet_id: u32, id: u32) -> Vec<u8> {
-			let result = Network::get_accountant_data(subnet_id, id);
-			result.encode()
-		}
 		fn get_minimum_subnet_nodes(memory_mb: u128) -> u32 {
 			let result = Network::get_minimum_subnet_nodes(memory_mb);
 			result
@@ -920,6 +893,14 @@ impl_runtime_apis! {
 			let result = Network::is_subnet_node_by_peer_id(subnet_id, peer_id);
 			result
 		}	
+		fn are_subnet_nodes_by_peer_id(subnet_id: u32, peer_ids: Vec<Vec<u8>>) -> Vec<u8> {
+			let result = Network::are_subnet_nodes_by_peer_id(subnet_id, peer_ids);
+			result.encode()
+		}
+		fn is_subnet_node_by_a(subnet_id: u32, a: BoundedVec<u8, DefaultSubnetNodeUniqueParamLimit>) -> bool {
+			let result = Network::is_subnet_node_by_a(subnet_id, a);
+			result
+		}
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]

@@ -35,6 +35,7 @@ pallet-utility.workspace = true
 pallet-proxy.workspace = true
 pallet-preimage.workspace = true
 pallet-scheduler.workspace = true
+pallet-node-authorization.workspace = true
 
 sp-api.workspace = true
 sp-block-builder.workspace = true
@@ -59,7 +60,6 @@ pallet-network = { version = "4.0.0-dev", default-features = false, path = "../p
 pallet-insecure-randomness-collective-flip.workspace = true
 pallet-multisig.workspace = true
 network-custom-rpc-runtime-api = { version = "0.0.1", default-features = false, path = "../pallets/network/runtime-api" }
-pallet-admin = { version = "4.0.0-dev", default-features = false, path = "../pallets/admin" }
 pallet-rewards = { version = "4.0.0-dev", default-features = false, path = "../pallets/rewards" }
 pallet-collective = { version = "37.0.0", default-features = false, path = "../pallets/collective" }
 pallet-atomic-swap = { version = "37.0.0", default-features = false, path = "../pallets/atomic-swap" }
@@ -97,11 +97,11 @@ std = [
 	"pallet-network/std",
 	"pallet-authorship/std",
 	"pallet-rewards/std",
-	"pallet-admin/std",
 	"pallet-utility/std",
 	"pallet-proxy/std",
 	"pallet-preimage/std",
 	"pallet-scheduler/std",
+	"pallet-node-authorization/std",
 	"pallet-collective/std",
 	"pallet-atomic-swap/std",
 

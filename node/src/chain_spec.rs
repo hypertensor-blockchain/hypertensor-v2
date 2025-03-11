@@ -1,5 +1,5 @@
 use sc_service::ChainType;
-use solochain_template_runtime::{AccountId, Signature, WASM_BINARY};
+use solochain_template_runtime::{AccountId, Signature, WASM_BINARY, NodeAuthorizationConfig};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -83,6 +83,7 @@ fn peer(id: u8) -> OpaquePeerId {
 	OpaquePeerId(peer_id.into())
 }
 
+// ./target/release/solochain-template-node --dev
 pub fn development_config() -> Result<ChainSpec, String> {
 	let mut accounts = (0..255).map(|x| get_account_id_from_seed::<sr25519::Public>(&x.to_string())).collect::<Vec<_>>();
 	accounts.extend(get_test_accounts());
@@ -94,7 +95,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 	.with_name("Development")
 	.with_id("dev")
 	.with_chain_type(ChainType::Development)
-	.with_genesis_config_patch(testnet_genesis(
+	.with_genesis_config_patch(local_genesis(
 		// Initial PoA authorities
 		vec![authority_keys_from_seed("Alice")],
 		// Sudo account
@@ -117,7 +118,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	.with_name("Local Testnet")
 	.with_id("local_testnet")
 	.with_chain_type(ChainType::Local)
-	.with_genesis_config_patch(testnet_genesis(
+	.with_genesis_config_patch(local_genesis(
 		// Initial PoA authorities
 		vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
 		// Sudo account
@@ -129,7 +130,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	.build())
 }
 
-pub fn gavin_config() -> Result<ChainSpec, String> {
+pub fn testnet_gavin_config() -> Result<ChainSpec, String> {
 	let mut accounts = (0..255).map(|x| get_account_id_from_seed::<sr25519::Public>(&x.to_string())).collect::<Vec<_>>();
 	accounts.extend(get_test_accounts());
 	accounts.extend(get_testnet_faucets());
@@ -140,7 +141,55 @@ pub fn gavin_config() -> Result<ChainSpec, String> {
 	.with_name("Gavin Testnet")
 	.with_id("gavin_testnet")
 	.with_chain_type(ChainType::Development)
-	.with_genesis_config_patch(testnet_genesis(
+	.with_genesis_config_patch(testnet_gavin_genesis(
+		// Initial PoA authorities
+		vec![
+			authority_keys_from_ss58(
+				"5F46bJk2dcCmhu7s8phKsRwZCoBpi8xwgS4xknnSviqn8wwA",
+				"5FjbWKESKnQpJF2BjCZ8YxqCkWK2xq9kAijcpey5jYrMTb4F",
+			),
+			authority_keys_from_ss58(
+				"5EX5TgeLSf55eZZrfG1GDPba6b3YXJvc4CoqzBkQoiX6KVKn",
+				"5HLfb4bHmQJKToTAfK4SumF3AKT17752KU63ytvgxUo8a4cD",
+			),
+			authority_keys_from_ss58(
+				"5CrPkhgMsYHX9NgoX3bMkSGSattgw9ukVkeF8wiv7Ewnb7vv",
+				"5EQzoKrJJEz8ALXnDSQFi6rv8EkvNDHrW9pVTgQ5KCtTcC37",
+			),
+			authority_keys_from_ss58(
+				"5DxxktpYcLXtAR6BzsosXbakUFN6cHxJEyfQPPZW1c8jiK7B",
+				"5HdjyBj6qMEnzsutuKvybSpSFkEaXN16KgUFqJQBxaQVPMWy",
+			),
+		],
+		// Sudo account
+		// get_account_id_from_seed::<sr25519::Public>("Alice"),
+		AccountId::from_ss58check("5F46bJk2dcCmhu7s8phKsRwZCoBpi8xwgS4xknnSviqn8wwA").unwrap(),
+		// Pre-funded accounts
+		// vec![
+		// 	get_account_id_from_seed::<sr25519::Public>("Alice"),
+		// 	get_account_id_from_seed::<sr25519::Public>("Bob"),
+		// 	get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+		// 	get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+		// ],
+		accounts,
+		true,
+	))
+	.build())
+}
+
+// Testnet Tensor
+pub fn testnet_tensor_config() -> Result<ChainSpec, String> {
+	let mut accounts = (0..255).map(|x| get_account_id_from_seed::<sr25519::Public>(&x.to_string())).collect::<Vec<_>>();
+	accounts.extend(get_test_accounts());
+	accounts.extend(get_testnet_faucets());
+	Ok(ChainSpec::builder(
+		WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?,
+		None,
+	)
+	.with_name("Testnet Tensor")
+	.with_id("testnet_tensor")
+	.with_chain_type(ChainType::Development)
+	.with_genesis_config_patch(testnet_tensor_genesis(
 		// Initial PoA authorities
 		vec![
 			authority_keys_from_ss58(
@@ -177,7 +226,56 @@ pub fn gavin_config() -> Result<ChainSpec, String> {
 }
 
 /// Configure initial storage state for FRAME modules.
-fn testnet_genesis(
+fn local_genesis(
+	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	root_key: AccountId,
+	endowed_accounts: Vec<AccountId>,
+	_enable_println: bool,
+) -> serde_json::Value {
+	let subnet_path: Vec<u8> = "bigscience/bloom-560m".into();
+	let mut peer_index: u8 = 0;
+	serde_json::json!({
+		"balances": {
+			// Configure endowed accounts with initial balance of 1 << 60.
+			"balances": endowed_accounts.iter().cloned().map(|k| (k, 10000000000000000000000000_u128)).collect::<Vec<_>>(),
+		},
+		"aura": {
+			"authorities": initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
+		},
+		"grandpa": {
+			"authorities": initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect::<Vec<_>>(),
+		},
+		"sudo": {
+			// Assign network admin rights.
+			"key": Some(root_key),
+		},
+		"nodeAuthorization": {
+			"nodes": vec![
+				(
+					OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap()),
+					endowed_accounts[0].clone()
+				),
+				(
+					OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap()),
+					endowed_accounts[1].clone()
+				),
+			],
+		},	
+		"network": {
+			"subnetPath": subnet_path,
+			"memoryMb": 500,
+			"subnetNodes": endowed_accounts.iter().cloned().map(|k| {
+				peer_index += 1;
+				(
+					k, 
+					peer(peer_index),
+				)
+			}).collect::<Vec<_>>(),
+		},
+	})
+}
+
+fn testnet_gavin_genesis(
 	initial_authorities: Vec<(AuraId, GrandpaId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
@@ -200,6 +298,67 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			"key": Some(root_key),
 		},
+		"nodeAuthorization": {
+			"nodes": vec![
+				(
+					OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap()),
+					endowed_accounts[0].clone()
+				),
+				(
+					OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap()),
+					endowed_accounts[1].clone()
+				),
+			],
+		},	
+		"network": {
+			"subnetPath": subnet_path,
+			"memoryMb": 2000,
+			"subnetNodes": endowed_accounts.iter().cloned().map(|k| {
+				peer_index += 1;
+				(
+					k, 
+					peer(peer_index),
+				)
+			}).collect::<Vec<_>>(),
+		},
+	})
+}
+
+fn testnet_tensor_genesis(
+	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	root_key: AccountId,
+	endowed_accounts: Vec<AccountId>,
+	_enable_println: bool,
+) -> serde_json::Value {
+	let subnet_path: Vec<u8> = "Orenguteng/Llama-3.1-8B-Lexi-Uncensored-V2".into();
+	let mut peer_index: u8 = 0;
+	serde_json::json!({
+		"balances": {
+			// Configure endowed accounts with initial balance of 1 << 60.
+			"balances": endowed_accounts.iter().cloned().map(|k| (k, 10000000000000000000000000_u128)).collect::<Vec<_>>(),
+		},
+		"aura": {
+			"authorities": initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>(),
+		},
+		"grandpa": {
+			"authorities": initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect::<Vec<_>>(),
+		},
+		"sudo": {
+			// Assign network admin rights.
+			"key": Some(root_key),
+		},
+		"nodeAuthorization": {
+			"nodes": vec![
+				(
+					OpaquePeerId(bs58::decode("12D3KooWJwKCnTerejvaSQP79QzKvanYNJb7HsHREjbywHknduzT").into_vec().unwrap()),
+					"5FtAdTm1ZFuyxuz39mWFZaaDF8925Pu62SvuF7svMQMSCcPF"
+				),
+				(
+					OpaquePeerId(bs58::decode("12D3KooWRGWycb9eSvyLfbF9bNKjyBhRezSzAmBJB36gheZK9tuc").into_vec().unwrap()),
+					"5EX5TgeLSf55eZZrfG1GDPba6b3YXJvc4CoqzBkQoiX6KVKn"
+				),
+			],
+		},	
 		"network": {
 			"subnetPath": subnet_path,
 			"memoryMb": 2000,

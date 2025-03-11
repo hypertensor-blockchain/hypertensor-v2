@@ -19,6 +19,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 use sp_std::vec::Vec;
+use frame_support::BoundedVec;
+use pallet_network::DefaultSubnetNodeUniqueParamLimit;
 
 sp_api::decl_runtime_apis! {
   pub trait NetworkRuntimeApi {
@@ -27,10 +29,11 @@ sp_api::decl_runtime_apis! {
     fn get_subnet_nodes_submittable(subnet_id: u32) -> Vec<u8>;
     fn get_subnet_nodes_subnet_unconfirmed_count(subnet_id: u32) -> u32;
     fn get_consensus_data(subnet_id: u32, epoch: u32) -> Vec<u8>;
-    fn get_accountant_data(subnet_id: u32, id: u32) -> Vec<u8>;
     fn get_minimum_subnet_nodes(memory_mb: u128) -> u32;
     fn get_minimum_delegate_stake(memory_mb: u128) -> u128;
     fn get_subnet_node_info(subnet_id: u32) -> Vec<u8>;
     fn is_subnet_node_by_peer_id(subnet_id: u32, peer_id: Vec<u8>) -> bool;
+    fn are_subnet_nodes_by_peer_id(subnet_id: u32, peer_ids: Vec<Vec<u8>>) -> Vec<u8>;
+    fn is_subnet_node_by_a(subnet_id: u32, a: BoundedVec<u8, DefaultSubnetNodeUniqueParamLimit>) -> bool;
   }
 }

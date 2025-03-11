@@ -24,14 +24,18 @@ sp-api.workspace = true
 sp-blockchain.workspace = true
 sp-rpc.workspace = true
 sp-runtime.workspace = true
+frame-support.workspace = true
 
 # Local
 network-custom-rpc-runtime-api = { path = "../runtime-api", default-features = false }
+pallet-network = { version = "4.0.0-dev", path = "../../network", default-features = false }
 
 [features]
 default = ["std"]
 std = [
   "sp-api/std",
+  "frame-support/std",
+  "pallet-network/std",
   "sp-runtime/std",
   "serde/std",
   "network-custom-rpc-runtime-api/std",

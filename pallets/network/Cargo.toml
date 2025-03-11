@@ -35,6 +35,7 @@ sp-std.workspace = true
 sp-core = { features = ["serde"], workspace = true }
 sp-runtime = { workspace = true }
 libm.workspace = true
+pallet-collective = { version = "37.0.0", default-features = false, path = "../collective" }
 
 [dev-dependencies]
 sp-io = { default-features = true, workspace = true }
