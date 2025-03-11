@@ -142,8 +142,6 @@ impl<T: Config> Pallet<T> {
       total_node_delegated_stake_balance
     );
 
-    log::error!("delegate_stake_to_be_removed {:?}", delegate_stake_to_be_removed);
-
     // --- Ensure that we can convert this u128 to a balance.
     // Redunant
     let delegate_stake_to_be_added_as_currency = Self::u128_to_balance(delegate_stake_to_be_removed);

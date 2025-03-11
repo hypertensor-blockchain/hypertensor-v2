@@ -306,6 +306,8 @@ pub mod pallet {
 		InvalidSubnetId,
 
 		/// Maximum amount of subnet entries surpassed, see subnet `entry_interval` for more information
+		MaxSubnetEntryIntervalReached,
+		/// Maximum `entry_interval` parameter entered during subnet registration
 		MaxSubnetEntryInterval,
 
 		DelegateStakeTransferPeriodExceeded,
@@ -904,7 +906,7 @@ pub mod pallet {
 		100
 	}
 	#[pallet::type_value]
-	pub fn DefaultMaxLastSubnetEntry() -> u64 {
+	pub fn DefaultMaxSubnetEntryInterval() -> u64 {
 		// 1 week based on 6s blocks
 		100800
 	}
@@ -924,7 +926,7 @@ pub mod pallet {
 	pub type SubnetsData<T: Config> = StorageMap<_, Blake2_128Concat, u32, SubnetData>;
 
 	#[pallet::storage] // subnet_id => block_interval
-	pub type MaxLastSubnetEntry<T: Config> = StorageValue<_, u64, ValueQuery, DefaultMaxLastSubnetEntry>;
+	pub type MaxSubnetEntryInterval<T: Config> = StorageValue<_, u64, ValueQuery, DefaultMaxSubnetEntryInterval>;
 
 	/// The maximum a single node can enter a subnet per blocks interval
 	#[pallet::storage] // subnet_id => block
@@ -2896,6 +2898,11 @@ pub mod pallet {
 				Error::<T>::MaxSubnetMemory
 			);
 
+			ensure!(
+				subnet_data.entry_interval <= MaxSubnetEntryInterval::<T>::get(),
+				Error::<T>::MaxSubnetEntryInterval
+			);
+
 			let block: u64 = Self::get_current_block_as_u64();
 			let subnet_fee: u128 = Self::registration_cost(epoch);
 
@@ -3114,7 +3121,7 @@ pub mod pallet {
 			let block: u64 = Self::get_current_block_as_u64();
 			ensure!(
 				block >= LastSubnetEntry::<T>::get(subnet_id) + subnet.entry_interval,
-				Error::<T>::MaxSubnetEntryInterval
+				Error::<T>::MaxSubnetEntryIntervalReached
 			);
 
 			// Ensure hotkey either has no owner or is the origins hotkey
@@ -3605,61 +3612,66 @@ pub mod pallet {
 				return
 			}
 			
-			let subnet_id = 1;
+			// let subnet_id = 1;
 
-			let base_node_memory: u128 = BaseSubnetNodeMemoryMB::<T>::get();
+			// let base_node_memory: u128 = BaseSubnetNodeMemoryMB::<T>::get();
 
-			// --- Get min nodes based on default memory settings
-			let real_min_subnet_nodes: u128 = self.memory_mb.clone() / base_node_memory;
-			let mut min_subnet_nodes: u32 = MinSubnetNodes::<T>::get();
-			if real_min_subnet_nodes as u32 > min_subnet_nodes {
-				min_subnet_nodes = real_min_subnet_nodes as u32;
-			}
+			// // --- Get min nodes based on default memory settings
+			// let real_min_subnet_nodes: u128 = self.memory_mb.clone() / base_node_memory;
+			// let mut min_subnet_nodes: u32 = MinSubnetNodes::<T>::get();
+			// if real_min_subnet_nodes as u32 > min_subnet_nodes {
+			// 	min_subnet_nodes = real_min_subnet_nodes as u32;
+			// }
 				
-			let target_subnet_nodes: u32 = (min_subnet_nodes as u128).saturating_mul(TargetSubnetNodesMultiplier::<T>::get()).saturating_div(1000000000) as u32 + min_subnet_nodes;
+			// let target_subnet_nodes: u32 = (min_subnet_nodes as u128).saturating_mul(TargetSubnetNodesMultiplier::<T>::get()).saturating_div(1000000000) as u32 + min_subnet_nodes;
 
-			let subnet_data = SubnetData {
-				id: subnet_id,
-				path: self.subnet_path.clone(),
-				min_nodes: min_subnet_nodes,
-				target_nodes: target_subnet_nodes,
-				memory_mb: self.memory_mb.clone(),
-				registration_blocks: MinSubnetRegistrationBlocks::<T>::get(),
-				initialized: 1,
-				activated: 0,
-				entry_interval: 0,
-			};
+			// let subnet_data = SubnetData {
+			// 	id: subnet_id,
+			// 	path: self.subnet_path.clone(),
+			// 	min_nodes: min_subnet_nodes,
+			// 	target_nodes: target_subnet_nodes,
+			// 	memory_mb: self.memory_mb.clone(),
+			// 	registration_blocks: MinSubnetRegistrationBlocks::<T>::get(),
+			// 	initialized: 1,
+			// 	activated: 0,
+			// 	entry_interval: 0,
+			// };
 
-			// Increase total subnet memory
-			TotalSubnetMemoryMB::<T>::mutate(|n: &mut u128| *n += subnet_data.memory_mb);			
-			// Store unique path
-			SubnetPaths::<T>::insert(self.subnet_path.clone(), subnet_id);
-			// Store subnet data
-			SubnetsData::<T>::insert(subnet_id, subnet_data.clone());
-			// Increase total subnets count
-			TotalSubnets::<T>::mutate(|n: &mut u32| *n += 1);
+			// // Increase total subnet memory
+			// TotalSubnetMemoryMB::<T>::mutate(|n: &mut u128| *n += subnet_data.memory_mb);			
+			// // Store unique path
+			// SubnetPaths::<T>::insert(self.subnet_path.clone(), subnet_id);
+			// // Store subnet data
+			// SubnetsData::<T>::insert(subnet_id, subnet_data.clone());
+			// // Increase total subnets count
+			// TotalSubnets::<T>::mutate(|n: &mut u32| *n += 1);
 
-			// Increase delegate stake to allow activation of subnet model
-			let min_stake_balance = MinStakeBalance::<T>::get();
-			// --- Get minimum subnet stake balance
-			let min_subnet_stake_balance = min_stake_balance * min_subnet_nodes as u128;
-			// --- Get required delegate stake balance for a subnet to have to stay live
-			let mut min_subnet_delegate_stake_balance = (min_subnet_stake_balance as u128).saturating_mul(MinSubnetDelegateStakePercentage::<T>::get()).saturating_div(1000000000);
+			// // Increase delegate stake to allow activation of subnet model
+			// let min_stake_balance = MinStakeBalance::<T>::get();
+			// // --- Get minimum subnet stake balance
+			// let min_subnet_stake_balance = min_stake_balance * min_subnet_nodes as u128;
+			// // --- Get required delegate stake balance for a subnet to have to stay live
+			// let mut min_subnet_delegate_stake_balance = (min_subnet_stake_balance as u128).saturating_mul(MinSubnetDelegateStakePercentage::<T>::get()).saturating_div(1000000000);
 
-			// --- Get absolute minimum required subnet delegate stake balance
-			let min_subnet_delegate_stake = MinSubnetDelegateStake::<T>::get();
-			// --- Return here if the absolute minimum required subnet delegate stake balance is greater
-			//     than the calculated minimum requirement
-			if min_subnet_delegate_stake > min_subnet_delegate_stake_balance {
-				min_subnet_delegate_stake_balance = min_subnet_delegate_stake
-			}	
-			TotalSubnetDelegateStakeBalance::<T>::insert(subnet_id, min_subnet_delegate_stake_balance);
+			// // --- Get absolute minimum required subnet delegate stake balance
+			// let min_subnet_delegate_stake = MinSubnetDelegateStake::<T>::get();
+			// // --- Return here if the absolute minimum required subnet delegate stake balance is greater
+			// //     than the calculated minimum requirement
+			// if min_subnet_delegate_stake > min_subnet_delegate_stake_balance {
+			// 	min_subnet_delegate_stake_balance = min_subnet_delegate_stake
+			// }	
+			// TotalSubnetDelegateStakeBalance::<T>::insert(subnet_id, min_subnet_delegate_stake_balance);
 			
-			// --- Initialize subnet nodes
-			// Only initialize to test using subnet nodes
-			// If testing using subnet nodes in a subnet, comment out the ``for`` loop
+			// // --- Initialize subnet nodes
+			// // Only initialize to test using subnet nodes
+			// // If testing using subnet nodes in a subnet, comment out the ``for`` loop
 
-			let mut stake_amount: u128 = MinStakeBalance::<T>::get();
+			// let mut stake_amount: u128 = MinStakeBalance::<T>::get();
+			
+
+			//
+			//
+			//
 			
 			// let mut count = 0;
 			// for (account_id, peer_id) in &self.subnet_nodes {

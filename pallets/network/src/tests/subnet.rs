@@ -83,6 +83,8 @@ fn test_register_subnet_subnet_registration_cooldown() {
   new_test_ext().execute_with(|| {
     let subnet_path: Vec<u8> = "petals-team/StableBeluga2".into();
 
+    increase_epochs(1);
+
     let epoch_length = EpochLength::get();
     let block_number = System::block_number();
     let epoch = System::block_number().saturating_div(epoch_length);
@@ -104,7 +106,7 @@ fn test_register_subnet_subnet_registration_cooldown() {
     let block_number = System::block_number();
     let epoch = System::block_number().saturating_div(epoch_length);
     let next_registration_epoch = Network::get_next_registration_epoch(epoch as u32);
-    increase_epochs(next_registration_epoch - epoch as u32);
+    // increase_epochs(next_registration_epoch - epoch as u32);
 
     // --- Register subnet for activation
     assert_ok!(
@@ -126,7 +128,6 @@ fn test_register_subnet_subnet_registration_cooldown() {
       entry_interval: 0,
     };
 
-    // --- Register subnet for activation
     assert_err!(
       Network::register_subnet(
         RuntimeOrigin::signed(account(0)),
@@ -139,7 +140,7 @@ fn test_register_subnet_subnet_registration_cooldown() {
     let block_number = System::block_number();
     let epoch = System::block_number().saturating_div(epoch_length);
     let next_registration_epoch = Network::get_next_registration_epoch(epoch as u32);
-    increase_epochs(next_registration_epoch - epoch as u32);
+    increase_epochs(next_registration_epoch);
 
     let epoch_length = EpochLength::get();
     let block_number = System::block_number();
@@ -155,6 +156,24 @@ fn test_register_subnet_subnet_registration_cooldown() {
         RuntimeOrigin::signed(account(0)),
         add_subnet_data.clone(),
       )
+    );
+
+
+    let subnet_path: Vec<u8> = "petals-team/StableBeluga4".into();
+
+    let add_subnet_data = RegistrationSubnetData {
+      path: subnet_path.clone().into(),
+      memory_mb: DEFAULT_MEM_MB,
+      registration_blocks: registration_blocks,
+      entry_interval: 0,
+    };
+
+    assert_err!(
+      Network::register_subnet(
+        RuntimeOrigin::signed(account(0)),
+        add_subnet_data.clone(),
+      ),
+      Error::<Test>::SubnetRegistrationCooldown
     );
   })
 }

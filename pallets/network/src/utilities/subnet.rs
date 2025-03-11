@@ -101,42 +101,92 @@ impl<T: Config> Pallet<T> {
   }
 
   pub fn registration_cost(epoch: u32) -> u128 {
-    let period: u32 = SubnetRegistrationInterval::<T>::get();
     let last_registration_epoch = LastSubnetRegistrationEpoch::<T>::get();
-    let next_registration_epoch = Self::get_next_registration_epoch(last_registration_epoch);
     let fee_min: u128 = MinSubnetRegistrationFee::<T>::get();
+    let fee_max: u128 = MaxSubnetRegistrationFee::<T>::get();
+    let period: u32 = SubnetRegistrationInterval::<T>::get();
 
-    // If no registration within period, keep at `fee_min`
-    if epoch >= next_registration_epoch + period {
-      return fee_min
+    // Calculate the start of the next registration period
+    let next_registration_lower_bound_epoch = Self::get_next_registration_epoch(last_registration_epoch);
+    let next_registration_upper_bound_epoch = next_registration_lower_bound_epoch + period;
+
+    // If the current epoch is beyond the next registration period, return min fee
+    if epoch >= next_registration_upper_bound_epoch {
+        return fee_min;
     }
 
-    let fee_max: u128 = MaxSubnetRegistrationFee::<T>::get();
+    // Calculate the current position within the registration period
+    let cycle_epoch = epoch - next_registration_lower_bound_epoch;
 
-    // Epoch within the cycle
-    let cycle_epoch = epoch % period;
-    let decrease_per_epoch = (fee_max.saturating_sub(fee_min)).saturating_div(period as u128);
-    
-    let cost = fee_max.saturating_sub(decrease_per_epoch.saturating_mul(cycle_epoch as u128));
-    // Ensures cost doesn't go below min
+    // Calculate the fee decrease per epoch
+    let decrease_per_epoch = (fee_max - fee_min) / period as u128;
+
+    // Calculate the current fee
+    let cost = fee_max - (decrease_per_epoch * cycle_epoch as u128);
+
+    // Ensure the fee doesn't go below the minimum
     cost.max(fee_min)
+  }
+
+  // pub fn registration_cost(epoch: u32) -> u128 {
+  //   let last_registration_epoch = LastSubnetRegistrationEpoch::<T>::get();
+  //   let fee_min: u128 = MinSubnetRegistrationFee::<T>::get();
+
+  //   // First registration is min fee (possibly fix this)
+  //   if last_registration_epoch == 0 {
+  //     return fee_min
+  //   }
+
+  //   // --- Get the nexr registration epoch based on the last subnet registered epoch
+  //   // This can be lower than the current epoch if no registrations were in the previous period or prior to the previous period
+  //   let next_registration_lower_bound_epoch = Self::get_next_registration_epoch(last_registration_epoch);
+  //   let period: u32 = SubnetRegistrationInterval::<T>::get();
+  //   let next_registration_upper_bound_epoch = next_registration_lower_bound_epoch + period;
+
+  //   // If no registration within period or previous periods, keep at `fee_min`
+  //   // # Example
+  //   // *`epoch`: 100
+  //   // *`next_registration_upper_bound_epoch`: 200
+  //   // *`period`: 100
+  //   if next_registration_upper_bound_epoch <= epoch {
+  //     return fee_min
+  //   }
+
+  //   let fee_max: u128 = MaxSubnetRegistrationFee::<T>::get();
+
+  //   // Epoch within the cycle
+  //   let cycle_epoch = epoch % period;
+  //   let decrease_per_epoch = (fee_max.saturating_sub(fee_min)).saturating_div(period as u128);
+  //   let cost = fee_max.saturating_sub(decrease_per_epoch.saturating_mul(cycle_epoch as u128));
+
+  //   // Ensures cost doesn't go below min
+  //   cost.max(fee_min)
+  // }
+
+  fn get_registration_cost(
+    current_epoch: u32, 
+    last_registration_epoch: u32, 
+    fee_min: u128, 
+    fee_max: u128
+  ) {
+    let next_registration_lower_bound_epoch = Self::get_next_registration_epoch(last_registration_epoch);
+
   }
 
   pub fn can_subnet_register(current_epoch: u32) -> bool {
     current_epoch >= Self::get_next_registration_epoch(current_epoch)
   }
 
+  /// Get the next registration epoch based on an epoch
   pub fn get_next_registration_epoch(current_epoch: u32) -> u32 {
     let last_registration_epoch: u32 = LastSubnetRegistrationEpoch::<T>::get();
+    // --- Handle genesis
+    if last_registration_epoch == 0 {
+      return 0
+    }
     let period: u32 = SubnetRegistrationInterval::<T>::get();
-    // // --- Genesis handling
-    // if last_registration_epoch < subnet_registration_fee_period {
-    //   return 0
-    // }
-    let next_valid_epoch = last_registration_epoch + (
+    last_registration_epoch + (
       period - (last_registration_epoch % period)
-    );
-    next_valid_epoch
+    )
   }
-
 }

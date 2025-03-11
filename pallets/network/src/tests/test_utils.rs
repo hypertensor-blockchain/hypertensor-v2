@@ -57,6 +57,7 @@ pub fn build_activated_subnet(subnet_path: Vec<u8>, start: u32, mut end: u32, de
   let block_number = System::block_number();
   let epoch = System::block_number().saturating_div(epoch_length);
   let next_registration_epoch = Network::get_next_registration_epoch(epoch as u32);
+  log::error!("next_registration_epoch {:?}", next_registration_epoch);
   increase_epochs(next_registration_epoch - epoch as u32);
 
   let cost = Network::registration_cost(epoch as u32);
@@ -422,11 +423,20 @@ pub fn post_subnet_removal_ensures(subnet_id: u32, start: u32, end: u32) {
 // }
 
 pub fn increase_epochs(epochs: u32) {
+  if epochs == 0 {
+    return
+  }
   let block = System::block_number();
   let epoch_length = EpochLength::get();
   let next_epoch_start_block = (epoch_length * epochs as u64) + block - (block % (epoch_length * epochs as u64));
   System::set_block_number(next_epoch_start_block);
 }
+
+pub fn set_epoch(epoch: u32) {
+  let epoch_length = EpochLength::get();
+  System::set_block_number(epoch as u64 * epoch_length);
+}
+
 
 pub fn make_subnet_submittable() {
   // increase blocks

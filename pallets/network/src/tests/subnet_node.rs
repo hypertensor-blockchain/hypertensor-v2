@@ -2355,8 +2355,8 @@ fn test_update_delegate_reward_rate() {
 
     let subnet_node = SubnetNodesData::<Test>::get(subnet_id, subnet_node_id);
     assert_eq!(subnet_node.delegate_reward_rate, 0);
-    // build_activated_subnet increases blocks by 10,000
-    assert_eq!(subnet_node.last_delegate_reward_rate_update, 10000);
+    // build_activated_subnet increases blocks by 10,000 (not anymore)
+    assert_eq!(subnet_node.last_delegate_reward_rate_update, 0);
 
 
     let max_reward_rate_decrease = MaxRewardRateDecrease::<Test>::get();
