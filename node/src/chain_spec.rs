@@ -144,18 +144,22 @@ pub fn testnet_gavin_config() -> Result<ChainSpec, String> {
 	.with_genesis_config_patch(testnet_gavin_genesis(
 		// Initial PoA authorities
 		vec![
+			// node 1
 			authority_keys_from_ss58(
 				"5F46bJk2dcCmhu7s8phKsRwZCoBpi8xwgS4xknnSviqn8wwA",
 				"5FjbWKESKnQpJF2BjCZ8YxqCkWK2xq9kAijcpey5jYrMTb4F",
 			),
+			// node 2
 			authority_keys_from_ss58(
 				"5EX5TgeLSf55eZZrfG1GDPba6b3YXJvc4CoqzBkQoiX6KVKn",
 				"5HLfb4bHmQJKToTAfK4SumF3AKT17752KU63ytvgxUo8a4cD",
 			),
+			// node 3
 			authority_keys_from_ss58(
 				"5CrPkhgMsYHX9NgoX3bMkSGSattgw9ukVkeF8wiv7Ewnb7vv",
 				"5EQzoKrJJEz8ALXnDSQFi6rv8EkvNDHrW9pVTgQ5KCtTcC37",
 			),
+			// node 4
 			authority_keys_from_ss58(
 				"5DxxktpYcLXtAR6BzsosXbakUFN6cHxJEyfQPPZW1c8jiK7B",
 				"5HdjyBj6qMEnzsutuKvybSpSFkEaXN16KgUFqJQBxaQVPMWy",
@@ -192,18 +196,27 @@ pub fn testnet_tensor_config() -> Result<ChainSpec, String> {
 	.with_genesis_config_patch(testnet_tensor_genesis(
 		// Initial PoA authorities
 		vec![
+			// node 1
 			authority_keys_from_ss58(
 				"5F46bJk2dcCmhu7s8phKsRwZCoBpi8xwgS4xknnSviqn8wwA",
 				"5FjbWKESKnQpJF2BjCZ8YxqCkWK2xq9kAijcpey5jYrMTb4F",
 			),
+			// node 2
 			authority_keys_from_ss58(
 				"5EX5TgeLSf55eZZrfG1GDPba6b3YXJvc4CoqzBkQoiX6KVKn",
 				"5HLfb4bHmQJKToTAfK4SumF3AKT17752KU63ytvgxUo8a4cD",
 			),
+			// node 3
 			authority_keys_from_ss58(
 				"5CrPkhgMsYHX9NgoX3bMkSGSattgw9ukVkeF8wiv7Ewnb7vv",
 				"5EQzoKrJJEz8ALXnDSQFi6rv8EkvNDHrW9pVTgQ5KCtTcC37",
 			),
+			// RT
+			authority_keys_from_ss58(
+				"5HTZT2Lj9rdiFPSfBMJ5HyJmfFSEnannWFrtVPQpG8DKgcMB",
+				"5G1Zax7TSTj4JvFhh3efTnfdmMLrxQJJXWmBUkND7uQ6YRub",
+			),
+			// Rizzo
 			authority_keys_from_ss58(
 				"5DxxktpYcLXtAR6BzsosXbakUFN6cHxJEyfQPPZW1c8jiK7B",
 				"5HdjyBj6qMEnzsutuKvybSpSFkEaXN16KgUFqJQBxaQVPMWy",
@@ -353,10 +366,16 @@ fn testnet_tensor_genesis(
 					OpaquePeerId(bs58::decode("12D3KooWJwKCnTerejvaSQP79QzKvanYNJb7HsHREjbywHknduzT").into_vec().unwrap()),
 					"5FtAdTm1ZFuyxuz39mWFZaaDF8925Pu62SvuF7svMQMSCcPF"
 				),
+				// RT
 				(
-					OpaquePeerId(bs58::decode("12D3KooWRGWycb9eSvyLfbF9bNKjyBhRezSzAmBJB36gheZK9tuc").into_vec().unwrap()),
-					"5EX5TgeLSf55eZZrfG1GDPba6b3YXJvc4CoqzBkQoiX6KVKn"
+					OpaquePeerId(bs58::decode("12D3KooWPyyK12EYE6dvUCkNUdwPV2xtjKFhsSZZojf2F2GjYG95").into_vec().unwrap()),
+					"5HTZT2Lj9rdiFPSfBMJ5HyJmfFSEnannWFrtVPQpG8DKgcMB"
 				),
+				// Rizzo
+				(
+					OpaquePeerId(bs58::decode("12D3KooWSQ1dNpsjS7QbisGeaYkjYfATUWP8PsU4VsNr1UtX6Psx").into_vec().unwrap()),
+					"5DxxktpYcLXtAR6BzsosXbakUFN6cHxJEyfQPPZW1c8jiK7B"
+				),				
 			],
 		},	
 		"network": {
