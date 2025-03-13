@@ -829,20 +829,17 @@ pub mod pallet {
 	}
 	#[pallet::type_value]
 	pub fn DefaultMinSubnetNodes() -> u32 {
-		// testnet is 4
-		// 4
-		// local
+		// development and mainnet
+		// 6
+		// local && testnet
 		1
 	}
 	#[pallet::type_value]
 	pub fn DefaultMinSubnetRegistrationBlocks() -> u64 {
 		// 9 days at 6s blocks
 		// 129_600
-
-		// Testnet 1 hour
-		// 600
-
-		// Local 24 blocks
+		
+		// Testnet && Local 24 blocks
 		25
 	}
 	#[pallet::type_value]
@@ -898,17 +895,18 @@ pub mod pallet {
 		1000e+18 as u128
 	}
 	#[pallet::type_value]
-	pub fn DefaultSubnetRegistrationFeePeriod() -> u32 {
-		100
-	}
-	#[pallet::type_value]
 	pub fn DefaultSubnetRegistrationInterval() -> u32 {
-		100
+		// 1 week based on 6s blocks using epochs
+		// 1008
+		// Testnet:
+		// * 1 hour, 600 blocks, 6 epochs
+		6
 	}
 	#[pallet::type_value]
 	pub fn DefaultMaxSubnetEntryInterval() -> u64 {
 		// 1 week based on 6s blocks
-		100800
+		// 100800
+		0
 	}
 
 	/// Count of subnets
@@ -925,6 +923,7 @@ pub mod pallet {
 	#[pallet::storage] // subnet_id => data struct
 	pub type SubnetsData<T: Config> = StorageMap<_, Blake2_128Concat, u32, SubnetData>;
 
+	// Max per subnet node entry interval to any given subnet
 	#[pallet::storage] // subnet_id => block_interval
 	pub type MaxSubnetEntryInterval<T: Config> = StorageValue<_, u64, ValueQuery, DefaultMaxSubnetEntryInterval>;
 
