@@ -1,5 +1,5 @@
 use sc_service::ChainType;
-use solochain_template_runtime::{AccountId, Signature, WASM_BINARY, NodeAuthorizationConfig};
+use solochain_template_runtime::{AccountId, Signature, WASM_BINARY};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -262,18 +262,18 @@ fn local_genesis(
 			// Assign network admin rights.
 			"key": Some(root_key),
 		},
-		"nodeAuthorization": {
-			"nodes": vec![
-				(
-					OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap()),
-					endowed_accounts[0].clone()
-				),
-				(
-					OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap()),
-					endowed_accounts[1].clone()
-				),
-			],
-		},	
+		// "nodeAuthorization": {
+		// 	"nodes": vec![
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap()),
+		// 			endowed_accounts[0].clone()
+		// 		),
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap()),
+		// 			endowed_accounts[1].clone()
+		// 		),
+		// 	],
+		// },	
 		"network": {
 			"subnetPath": subnet_path,
 			"memoryMb": 500,
@@ -311,18 +311,18 @@ fn testnet_gavin_genesis(
 			// Assign network admin rights.
 			"key": Some(root_key),
 		},
-		"nodeAuthorization": {
-			"nodes": vec![
-				(
-					OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap()),
-					endowed_accounts[0].clone()
-				),
-				(
-					OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap()),
-					endowed_accounts[1].clone()
-				),
-			],
-		},	
+		// "nodeAuthorization": {
+		// 	"nodes": vec![
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap()),
+		// 			endowed_accounts[0].clone()
+		// 		),
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap()),
+		// 			endowed_accounts[1].clone()
+		// 		),
+		// 	],
+		// },	
 		"network": {
 			"subnetPath": subnet_path,
 			"memoryMb": 2000,
@@ -360,24 +360,24 @@ fn testnet_tensor_genesis(
 			// Assign network admin rights.
 			"key": Some(root_key),
 		},
-		"nodeAuthorization": {
-			"nodes": vec![
-				(
-					OpaquePeerId(bs58::decode("12D3KooWJwKCnTerejvaSQP79QzKvanYNJb7HsHREjbywHknduzT").into_vec().unwrap()),
-					"5FtAdTm1ZFuyxuz39mWFZaaDF8925Pu62SvuF7svMQMSCcPF"
-				),
-				// RT
-				(
-					OpaquePeerId(bs58::decode("12D3KooWPyyK12EYE6dvUCkNUdwPV2xtjKFhsSZZojf2F2GjYG95").into_vec().unwrap()),
-					"5HTZT2Lj9rdiFPSfBMJ5HyJmfFSEnannWFrtVPQpG8DKgcMB"
-				),
-				// Rizzo
-				(
-					OpaquePeerId(bs58::decode("12D3KooWSQ1dNpsjS7QbisGeaYkjYfATUWP8PsU4VsNr1UtX6Psx").into_vec().unwrap()),
-					"5DxxktpYcLXtAR6BzsosXbakUFN6cHxJEyfQPPZW1c8jiK7B"
-				),				
-			],
-		},	
+		// "nodeAuthorization": {
+		// 	"nodes": vec![
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWJwKCnTerejvaSQP79QzKvanYNJb7HsHREjbywHknduzT").into_vec().unwrap()),
+		// 			"5FtAdTm1ZFuyxuz39mWFZaaDF8925Pu62SvuF7svMQMSCcPF"
+		// 		),
+		// 		// RT
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWPyyK12EYE6dvUCkNUdwPV2xtjKFhsSZZojf2F2GjYG95").into_vec().unwrap()),
+		// 			"5HTZT2Lj9rdiFPSfBMJ5HyJmfFSEnannWFrtVPQpG8DKgcMB"
+		// 		),
+		// 		// Rizzo
+		// 		(
+		// 			OpaquePeerId(bs58::decode("12D3KooWSQ1dNpsjS7QbisGeaYkjYfATUWP8PsU4VsNr1UtX6Psx").into_vec().unwrap()),
+		// 			"5DxxktpYcLXtAR6BzsosXbakUFN6cHxJEyfQPPZW1c8jiK7B"
+		// 		),				
+		// 	],
+		// },	
 		"network": {
 			"subnetPath": subnet_path,
 			"memoryMb": 2000,

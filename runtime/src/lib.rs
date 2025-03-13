@@ -447,21 +447,21 @@ impl pallet_scheduler::Config for Runtime {
 	type Preimages = Preimage;
 }
 
-parameter_types! {
-  pub const MaxWellKnownNodes: u32 = 8;
-  pub const MaxPeerIdLength: u32 = 128;
-}
+// parameter_types! {
+//   pub const MaxWellKnownNodes: u32 = 8;
+//   pub const MaxPeerIdLength: u32 = 128;
+// }
 
-impl pallet_node_authorization::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type MaxWellKnownNodes = MaxWellKnownNodes;
-	type MaxPeerIdLength = MaxPeerIdLength;
-	type AddOrigin = EnsureRoot<AccountId>;
-	type RemoveOrigin = EnsureRoot<AccountId>;
-	type SwapOrigin = EnsureRoot<AccountId>;
-	type ResetOrigin = EnsureRoot<AccountId>;
-	type WeightInfo = ();
-}
+// impl pallet_node_authorization::Config for Runtime {
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type MaxWellKnownNodes = MaxWellKnownNodes;
+// 	type MaxPeerIdLength = MaxPeerIdLength;
+// 	type AddOrigin = EnsureRoot<AccountId>;
+// 	type RemoveOrigin = EnsureRoot<AccountId>;
+// 	type SwapOrigin = EnsureRoot<AccountId>;
+// 	type ResetOrigin = EnsureRoot<AccountId>;
+// 	type WeightInfo = ();
+// }
 
 
 // /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
@@ -632,8 +632,8 @@ mod runtime {
 	#[runtime::pallet_index(17)]
 	pub type AtomicSwap = pallet_atomic_swap;
 
-	#[runtime::pallet_index(18)]
-	pub type NodeAuthorization = pallet_node_authorization;
+	// #[runtime::pallet_index(18)]
+	// pub type NodeAuthorization = pallet_node_authorization;
 }
 
 /// The address format for describing accounts.

@@ -5298,22 +5298,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-node-authorization"
-version = "37.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "234a1d7cd3960082dde6605174aacea7e0ea130d685dba1e7dceef82ee202fd3"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core 34.0.0",
- "sp-io 38.0.0",
- "sp-runtime 39.0.5",
-]
-
-[[package]]
 name = "pallet-preimage"
 version = "37.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8540,7 +8524,6 @@ dependencies = [
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
  "pallet-network",
- "pallet-node-authorization",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-rewards",
