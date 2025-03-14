@@ -27,6 +27,20 @@ impl<T: Config> Pallet<T> {
     let mut subnet_delegate_stake: Vec<(Vec<u8>, u128)> = Vec::new();
 
     for (subnet_id, data) in subnets {
+
+      //
+      //
+      // TODO: Check Registration and Enactment period separately:
+      //       Registration Period:
+      //         - Can exist no matter what
+      //       Enactment Period:
+      //         - Once out of registration, if must have min nodes and min delegate stake.
+      //       Out of Enactment Period:
+      //         - Remove if not activated, althought should be automatically removed in Enactment if it didn't
+      //           meet HT requirements.
+      // let max_registration_block = data.initialized + data.registration_blocks;
+      // let max_enactment_block = max_registration_block + subnet_activation_enactment_period;
+
       // --- Ensure subnet is active is able to submit consensus
       let max_registration_block = data.initialized + data.registration_blocks + subnet_activation_enactment_period;
       if data.activated == 0 && block <= max_registration_block {
