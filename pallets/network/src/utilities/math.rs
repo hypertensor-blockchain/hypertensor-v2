@@ -19,6 +19,8 @@
 // @to-do: Increase precision to 100.0000
 
 use super::*;
+use libm::pow;
+use sp_core::U256;
 
 impl<T: Config> Pallet<T> {
   // Percentages are defined by default with 2 decimals of precision (100.00). 
@@ -89,11 +91,25 @@ impl<T: Config> Pallet<T> {
     x.saturating_mul(Self::PERCENTAGE_FACTOR).saturating_div(y).saturating_add(u128::from(x % y == 0))
   }
 
+  /// Get percentage in decimal format that uses `PERCENTAGE_FACTOR` as f64
+  pub fn get_percent_as_f64(v: u128) -> f64 {
+    v as f64 / Self::PERCENTAGE_FACTOR as f64
+  }
+
+  pub fn pow(x: f64, exp: f64) -> f64 {
+    pow(x, exp)
+  }
+
+
+  /// 1e18 version
   pub const PERCENTAGE_FACTOR_V2: u128 = 1e+18 as u128;
   pub const HALF_PERCENT_V2: u128 = Self::PERCENTAGE_FACTOR_V2 / 2;
-  
+
+  pub const PERCENTAGE_FACTOR_V2_TEST: U256 = U256([0x8ac7230489e80000, 0x0, 0x0, 0x0]);
+  pub const HALF_PERCENT_V2_TEST: U256 = U256([0x6f05b59d3b200000, 0x0, 0x0, 0x0]);
+
   /// Percentage Math
-  // Inspired by Aave PercentageMath
+  /// Inspired by Aave PercentageMath
 
   /// `x` is value
   /// `y` is percentage
@@ -102,13 +118,17 @@ impl<T: Config> Pallet<T> {
     if x == 0 || y == 0 {
       return 0
     }
+    
+    let x = U256::from(x);
+    let y = U256::from(y);
 
-    if x > ((u128::MAX - Self::HALF_PERCENT_V2) / y) {
+    if x > ((U256::MAX - Self::HALF_PERCENT_V2_TEST) / y) {
       return 0
     }
 
     // x * y / 100.0
-    x.saturating_mul(y).saturating_div(Self::PERCENTAGE_FACTOR_V2)
+    let result = x * y / Self::PERCENTAGE_FACTOR_V2_TEST;
+    result.try_into().unwrap_or(u128::MAX)
   }
 
   /// `x` is value

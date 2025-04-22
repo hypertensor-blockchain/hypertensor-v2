@@ -2341,9 +2341,9 @@ dependencies = [
 
 [[package]]
 name = "frame-support"
-version = "37.0.0"
+version = "37.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87cae973c331b7f52ba18435713f9ed02bac20bd4fdedaaad57445d82f05eb9d"
+checksum = "7078e2b22461a2987d47b8062c07f28df4e518974a4a28c081c55d237090412a"
 dependencies = [
  "aquamarine",
  "array-bytes",
@@ -5277,6 +5277,7 @@ dependencies = [
 name = "pallet-network"
 version = "4.0.0-dev"
 dependencies = [
+ "env_logger",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5285,6 +5286,8 @@ dependencies = [
  "pallet-balances",
  "pallet-collective",
  "pallet-insecure-randomness-collective-flip",
+ "pallet-treasury",
+ "pallet-tx-pause",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -5467,6 +5470,43 @@ dependencies = [
  "sp-api",
  "sp-runtime 39.0.5",
  "sp-weights 31.0.0",
+]
+
+[[package]]
+name = "pallet-treasury"
+version = "36.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59cdefb4591b3c4e7f21284332b4f83b5681663db0976ff2e9cd78ee6f5a5343"
+dependencies = [
+ "docify",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core 34.0.0",
+ "sp-runtime 39.0.5",
+]
+
+[[package]]
+name = "pallet-tx-pause"
+version = "18.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1971e3dafa67fb5149a5077a6a0218d9250854797ae689ec4a3a222bc6587cd"
+dependencies = [
+ "docify",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-proxy",
+ "pallet-utility",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime 39.0.5",
 ]
 
 [[package]]
@@ -8532,6 +8572,8 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-treasury",
+ "pallet-tx-pause",
  "pallet-utility",
  "parity-scale-codec",
  "scale-info",

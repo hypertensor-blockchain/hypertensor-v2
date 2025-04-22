@@ -35,6 +35,8 @@ pallet-utility.workspace = true
 pallet-proxy.workspace = true
 pallet-preimage.workspace = true
 pallet-scheduler.workspace = true
+pallet-treasury.workspace = true
+pallet-tx-pause.workspace = true
 
 sp-api.workspace = true
 sp-block-builder.workspace = true
@@ -100,8 +102,10 @@ std = [
 	"pallet-proxy/std",
 	"pallet-preimage/std",
 	"pallet-scheduler/std",
+	"pallet-treasury/std",
 	"pallet-collective/std",
 	"pallet-atomic-swap/std",
+	"pallet-tx-pause/std",
 
 	"sp-api/std",
 	"sp-block-builder/std",
@@ -135,6 +139,7 @@ runtime-benchmarks = [
 	"pallet-network/runtime-benchmarks",
 	"pallet-proxy/runtime-benchmarks",
 	"pallet-collective/runtime-benchmarks",
+	"pallet-treasury/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
 ]
 
@@ -155,4 +160,5 @@ try-runtime = [
 	"pallet-multisig/try-runtime",
 	"pallet-proxy/try-runtime",
 	"pallet-collective/try-runtime",
+	"pallet-treasury/try-runtime",
 ]

@@ -12,21 +12,22 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, Verify},
+	traits::{BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, One, Verify, IdentityLookup},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 	RuntimeDebug
 };
 use codec::{Encode, Decode, MaxEncodedLen};
-
+use sp_runtime::traits::Get;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
+use alloc::collections::BTreeMap;
 pub use frame_support::{
 	construct_runtime, derive_impl, parameter_types, ord_parameter_types,
 	traits::{
 		fungible::HoldConsideration,
+		tokens::{ConversionFromAssetBalance, PaymentStatus, Pay, PayFromAccount, UnityAssetBalanceConversion},
 		ConstBool, ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem,
 		StorageInfo,
 		InstanceFilter,
@@ -47,8 +48,8 @@ pub use frame_support::{
 	genesis_builder_helper::{build_state, get_preset},
 	storage::bounded_vec::BoundedVec,
 };
-
-pub use frame_system::EnsureRoot;
+use core::{cell::RefCell, marker::PhantomData};
+pub use frame_system::{EnsureRoot, EnsureRootWithSuccess, EnsureWithSuccess};
 pub use pallet_balances::Call as BalancesCall;
 pub use frame_system::Call as SystemCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -56,6 +57,7 @@ use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter, Multiplier
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+
 use pallet_network::DefaultSubnetNodeUniqueParamLimit;
 
 pub use pallet_network;
@@ -138,19 +140,22 @@ pub const MILLISECS_PER_BLOCK: u64 = 6000;
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 // Time is measured by number of blocks.
-pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
-pub const YEAR: BlockNumber = DAYS * 365;
+// e.g. How many blocks in a minutes, hours, day, year
+pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber); // 10
+pub const HOURS: BlockNumber = MINUTES * 60; // 600
+pub const DAYS: BlockNumber = HOURS * 24; // 14400
+pub const YEAR: BlockNumber = DAYS * 365; // 5256000
+
+// Rewards pallet variables
 pub const BLOCKS_PER_HALVING: BlockNumber = YEAR * 2;
 pub const TARGET_MAX_TOTAL_SUPPLY: u128 = 2_800_000_000_000_000_000_000_000;
 pub const INITIAL_REWARD_PER_BLOCK: u128 = (TARGET_MAX_TOTAL_SUPPLY / 2) / BLOCKS_PER_HALVING as u128;
 
-pub const SECS_PER_BLOCK: u64 = 6000 / 1000;
+pub const SECS_PER_BLOCK: u32 = (MILLISECS_PER_BLOCK as BlockNumber) / 1000; // 6
 
-pub const EPOCH_LENGTH: u64 = 10;
-pub const BLOCKS_PER_EPOCH: u64 = SECS_PER_BLOCK * EPOCH_LENGTH;
-pub const EPOCHS_PER_YEAR: u64 = YEAR as u64 / BLOCKS_PER_EPOCH;
+// Blocks per epoch
+pub const BLOCKS_PER_EPOCH: u32 = 10;
+pub const EPOCHS_PER_YEAR: u32 = YEAR as u32 / BLOCKS_PER_EPOCH;
 
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
@@ -493,13 +498,15 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 }
 
 parameter_types! {
-	pub const InitialTxRateLimit: u64 = 0;
-	pub const EpochLength: u64 = EPOCH_LENGTH; // Testnet 600 blocks per erpoch / 69 mins per epoch, Local 10
+	pub const InitialTxRateLimit: u32 = 0;
+	pub const EpochLength: u32 = BLOCKS_PER_EPOCH; // Testnet 600 blocks per erpoch / 69 mins per epoch, Local 10
+	pub const EpochsPerYear: u32 = EPOCHS_PER_YEAR; // Testnet 600 blocks per erpoch / 69 mins per epoch, Local 10
 	pub const NetworkPalletId: PalletId = PalletId(*b"/network");
 	pub const MinProposalStake: u128 = 1_000_000_000_000_000_000; // 1 * 1e18
-	pub const DelegateStakeCooldownEpochs: u64 = 100;
-	pub const StakeCooldownEpochs: u64 = 100;
-	pub const DelegateStakeEpochsRemovalWindow: u64 = 10;
+	pub const DelegateStakeCooldownEpochs: u32 = 100;
+	pub const NodeDelegateStakeCooldownEpochs: u32 = 100;
+	pub const StakeCooldownEpochs: u32 = 100;
+	pub const DelegateStakeEpochsRemovalWindow: u32 = 10;
 	pub const MaxDelegateStakeUnlockings: u32 = 32;
 	pub const MaxStakeUnlockings: u32 = 32;
 }
@@ -511,18 +518,21 @@ impl pallet_network::Config for Runtime {
 	type MajorityCollectiveOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>;
 	type SuperMajorityCollectiveOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 4, 5>;
 	type EpochLength = EpochLength;
+	type EpochsPerYear = EpochsPerYear;
 	type StringLimit = ConstU32<12288>;
 	type InitialTxRateLimit = InitialTxRateLimit;
 // 	type OffchainSignature = Signature;
 // 	type OffchainPublic = AccountPublic;
 	type PalletId = NetworkPalletId;
   type DelegateStakeCooldownEpochs = DelegateStakeCooldownEpochs;
+	type NodeDelegateStakeCooldownEpochs = NodeDelegateStakeCooldownEpochs;
 	type DelegateStakeEpochsRemovalWindow = DelegateStakeEpochsRemovalWindow;
 	type MaxDelegateStakeUnlockings = MaxDelegateStakeUnlockings;
 	type MaxStakeUnlockings = MaxStakeUnlockings;
 	type StakeCooldownEpochs = StakeCooldownEpochs;
 	type Randomness = InsecureRandomnessCollectiveFlip;
 	type MinProposalStake = MinProposalStake;
+	type TreasuryAccount = TreasuryAccount;
 }
 
 pub struct AuraAccountAdapter;
@@ -539,6 +549,20 @@ impl frame_support::traits::FindAuthor<AccountId> for AuraAccountAdapter {
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = AuraAccountAdapter;
 	type EventHandler =  ();
+}
+
+parameter_types! {
+	pub const MaxNameLen: u32 = 50;
+}
+
+impl pallet_tx_pause::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type PauseOrigin = EnsureRoot<AccountId>;
+	type UnpauseOrigin = EnsureRoot<AccountId>;
+	type WhitelistedCalls = ();
+	type MaxNameLen = MaxNameLen;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -559,6 +583,35 @@ impl pallet_atomic_swap::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type SwapAction = pallet_atomic_swap::BalanceSwapAction<AccountId, Balances>;
 	type ProofLimit = ConstU32<1024>;
+}
+
+parameter_types! {
+	pub const Burn: Permill = Permill::from_percent(50);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const SpendLimit: Balance = u128::MAX;
+	pub TreasuryAccount: AccountId = Treasury::account_id();
+}
+
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	type Currency = Balances;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type RuntimeEvent = RuntimeEvent;
+	type SpendPeriod = ConstU32<2>;
+	type Burn = Burn;
+	type BurnDestination = (); // Just gets burned.
+	type WeightInfo = ();
+	type SpendFunds = ();
+	type MaxApprovals = ConstU32<100>;
+	type SpendOrigin = EnsureRootWithSuccess<AccountId, SpendLimit>;
+	type AssetKind = ();
+	type Beneficiary = AccountId;
+	type BeneficiaryLookup = IdentityLookup<Self::Beneficiary>;
+	type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
+	type BalanceConverter = UnityAssetBalanceConversion;
+	type PayoutPeriod = ConstU32<10>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -634,6 +687,12 @@ mod runtime {
 
 	// #[runtime::pallet_index(18)]
 	// pub type NodeAuthorization = pallet_node_authorization;
+
+	#[runtime::pallet_index(18)]
+	pub type Treasury = pallet_treasury;
+
+	#[runtime::pallet_index(19)]
+	pub type TxPause = pallet_tx_pause;	
 }
 
 /// The address format for describing accounts.
@@ -685,6 +744,7 @@ mod benches {
 		[pallet_sudo, Sudo]
 		[pallet_network, Network]
 		[pallet_collective, Collective]
+		[pallet_treasury, Treasury]
 	);
 }
 

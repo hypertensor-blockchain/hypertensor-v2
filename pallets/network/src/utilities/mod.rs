@@ -1,4 +1,5 @@
 use super::*;
+pub mod owner;
 pub mod era;
 pub mod misc;
 pub mod subnet_node;

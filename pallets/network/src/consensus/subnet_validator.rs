@@ -23,8 +23,8 @@ impl<T: Config> Pallet<T> {
   pub fn do_validate(
     subnet_id: u32, 
     hotkey: T::AccountId,
-    block: u64, 
-    epoch_length: u64,
+    block: u32, 
+    epoch_length: u32,
     epoch: u32,
     mut data: Vec<SubnetNodeData>,
     args: Option<BoundedVec<u8, DefaultValidatorArgsLimit>>,
@@ -49,14 +49,14 @@ impl<T: Config> Pallet<T> {
     // Remove duplicates based on peer_id
     data.dedup_by(|a, b| a.peer_id == b.peer_id);
 
-    // Remove idle classified entries
+    // Remove queue classified entries
     // Each peer must have an inclusion classification at minimum
     data.retain(|x| {
       match SubnetNodesData::<T>::try_get(
         subnet_id, 
-        SubnetNodeAccount::<T>::get(subnet_id, &x.peer_id)
+        PeerIdSubnetNode::<T>::get(subnet_id, &x.peer_id)
       ) {
-        Ok(subnet_node) => subnet_node.has_classification(&SubnetNodeClass::Included, epoch as u64),
+        Ok(subnet_node) => subnet_node.has_classification(&SubnetNodeClass::Included, epoch),
         Err(()) => false,
       }
     });
@@ -67,7 +67,7 @@ impl<T: Config> Pallet<T> {
 
     // --- Get count of eligible nodes that can be submitted for consensus rewards
     // This is the maximum amount of nodes that can be entered
-    let included_nodes: Vec<u32> = Self::get_classified_subnet_node_ids(subnet_id, &SubnetNodeClass::Included, epoch as u64);
+    let included_nodes: Vec<u32> = Self::get_classified_subnet_node_ids(subnet_id, &SubnetNodeClass::Included, epoch);
     let included_nodes_count = included_nodes.len();
 
     // --- Ensure data isn't greater than current registered subnet peers
@@ -78,7 +78,7 @@ impl<T: Config> Pallet<T> {
     );
     
     // --- Validator auto-attests the epoch
-    let mut attests: BTreeMap<u32, u64> = BTreeMap::new();
+    let mut attests: BTreeMap<u32, u32> = BTreeMap::new();
     attests.insert(validator_id, block);
 
     let rewards_data: RewardsData = RewardsData {
@@ -106,14 +106,14 @@ impl<T: Config> Pallet<T> {
   pub fn do_attest(
     subnet_id: u32, 
     hotkey: T::AccountId,
-    block: u64, 
-    epoch_length: u64,
+    block: u32, 
+    epoch_length: u32,
     epoch: u32,
   ) -> DispatchResultWithPostInfo {
     // --- Ensure subnet node exists under hotkey
     let subnet_node_id = match HotkeySubnetNodeId::<T>::try_get(
       subnet_id, 
-      hotkey.clone()
+      &hotkey
     ) {
       Ok(subnet_node_id) => subnet_node_id,
       Err(()) => return Err(Error::<T>::SubnetNodeNotExist.into()),
@@ -124,13 +124,13 @@ impl<T: Config> Pallet<T> {
       subnet_id, 
       subnet_node_id
     ) {
-      Ok(subnet_node) => subnet_node.has_classification(&SubnetNodeClass::Validator, epoch as u64),
+      Ok(subnet_node) => subnet_node.has_classification(&SubnetNodeClass::Validator, epoch),
       Err(()) => return Err(Error::<T>::SubnetNodeNotExist.into()),
     };
 
     SubnetRewardsSubmission::<T>::try_mutate_exists(
       subnet_id,
-      epoch.clone(),
+      epoch,
       |maybe_params| -> DispatchResult {
         let params = maybe_params.as_mut().ok_or(Error::<T>::InvalidSubnetRewardsSubmission)?;
         let mut attests = &mut params.attests;
@@ -154,7 +154,7 @@ impl<T: Config> Pallet<T> {
   }
 
   pub fn choose_validator(
-    block: u64,
+    block: u32,
     subnet_id: u32,
     subnet_node_ids: Vec<u32>,
     min_subnet_nodes: u32,
@@ -202,7 +202,7 @@ impl<T: Config> Pallet<T> {
     subnet_id: u32, 
     subnet_node_id: u32,
     attestation_percentage: u128, 
-    block: u64
+    block: u32
   ) {
     // We never ensure balance is above 0 because any hotkey chosen must have the target stake
     // balance at a minimum
@@ -210,13 +210,13 @@ impl<T: Config> Pallet<T> {
 
     // --- Get stake balance
     // This could be greater than the target stake balance
-    let account_subnet_stake: u128 = AccountSubnetStake::<T>::get(hotkey.clone(), subnet_id);
+    let account_subnet_stake: u128 = AccountSubnetStake::<T>::get(&hotkey, subnet_id);
 
     // --- Get slash amount up to max slash
     //
     let mut slash_amount: u128 = Self::percent_mul(account_subnet_stake, SlashPercentage::<T>::get());
     // --- Update slash amount up to attestation percent
-    slash_amount = Self::percent_mul(slash_amount, Self::PERCENTAGE_FACTOR - attestation_percentage);
+    slash_amount = Self::percent_mul(slash_amount, Self::PERCENTAGE_FACTOR.saturating_sub(attestation_percentage));
     // --- Update slash amount up to max slash
     let max_slash: u128 = MaxSlashAmount::<T>::get();
     if slash_amount > max_slash {
@@ -225,7 +225,7 @@ impl<T: Config> Pallet<T> {
     
     // --- Decrease account stake
     Self::decrease_account_stake(
-      &hotkey.clone(),
+      &hotkey,
       subnet_id, 
       slash_amount,
     );
@@ -235,7 +235,7 @@ impl<T: Config> Pallet<T> {
     SubnetNodePenalties::<T>::insert(subnet_id, subnet_node_id, penalties + 1);
 
     // --- Ensure maximum sequential removal consensus threshold is reached
-    if penalties + 1 > MaxSubnetNodePenalties::<T>::get() {
+    if penalties + 1 > MaxSubnetNodePenalties::<T>::get(subnet_id) {
       // --- Increase account penalty count
       Self::perform_remove_subnet_node(block, subnet_id, subnet_node_id);
     } else {

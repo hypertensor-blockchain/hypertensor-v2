@@ -46,6 +46,27 @@ frame_support::construct_runtime!(
 	}
 );
 
+pub const MILLISECS_PER_BLOCK: u64 = 6000;
+
+// NOTE: Currently it is not possible to change the slot duration after the chain has started.
+//       Attempting to do so will brick block production.
+pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+
+// Time is measured by number of blocks.
+pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
+pub const HOURS: BlockNumber = MINUTES * 60;
+pub const DAYS: BlockNumber = HOURS * 24;
+pub const YEAR: BlockNumber = DAYS * 365;
+pub const BLOCKS_PER_HALVING: BlockNumber = YEAR * 2;
+pub const TARGET_MAX_TOTAL_SUPPLY: u128 = 2_800_000_000_000_000_000_000_000;
+pub const INITIAL_REWARD_PER_BLOCK: u128 = (TARGET_MAX_TOTAL_SUPPLY / 2) / BLOCKS_PER_HALVING as u128;
+
+pub const SECS_PER_BLOCK: u32 = 6000 / 1000;
+
+pub const EPOCH_LENGTH: u32 = 10;
+pub const BLOCKS_PER_EPOCH: u32 = SECS_PER_BLOCK * EPOCH_LENGTH;
+pub const EPOCHS_PER_YEAR: u32 = YEAR as u32 / BLOCKS_PER_EPOCH;
+
 mod mock_democracy {
 	pub use pallet::*;
 	#[frame_support::pallet(dev_mode)]
@@ -93,12 +114,14 @@ impl pallet_balances::Config for Test {
 impl pallet_insecure_randomness_collective_flip::Config for Test {}
 
 parameter_types! {
-	pub const EpochLength: u64 = 100;
+	pub const EpochLength: u32 = EPOCH_LENGTH; // Testnet 600 blocks per erpoch / 69 mins per epoch, Local 10
+	pub const EpochsPerYear: u32 = EPOCHS_PER_YEAR; // Testnet 600 blocks per erpoch / 69 mins per epoch, Local 10
   pub const NetworkPalletId: PalletId = PalletId(*b"/network");
   pub const MinProposalStake: u128 = 1_000_000_000_000_000_000;
-  pub const DelegateStakeCooldownEpochs: u64 = 100;
-  pub const StakeCooldownEpochs: u64 = 100;
-	pub const DelegateStakeEpochsRemovalWindow: u64 = 10;
+  pub const DelegateStakeCooldownEpochs: u32 = 100;
+	pub const NodeDelegateStakeCooldownEpochs: u32 = 100; 
+  pub const StakeCooldownEpochs: u32 = 100;
+	pub const DelegateStakeEpochsRemovalWindow: u32 = 10;
   pub const MaxDelegateStakeUnlockings: u32 = 32;
   pub const MaxStakeUnlockings: u32 = 32;
 }
@@ -109,25 +132,23 @@ impl pallet_network::Config for Test {
   type Currency = Balances;
 	type MajorityCollectiveOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, Instance1, 2, 3>;
 	type SuperMajorityCollectiveOrigin = pallet_collective::EnsureProportionAtLeast<AccountId, Instance1, 4, 5>;
-  type EpochLength = EpochLength;
+	type EpochLength = EpochLength;
+	type EpochsPerYear = EpochsPerYear;
   type StringLimit = ConstU32<100>;
-	type InitialTxRateLimit = ConstU64<0>;
+	type InitialTxRateLimit = ConstU32<0>;
   type Randomness = InsecureRandomnessCollectiveFlip;
 	type PalletId = NetworkPalletId;
   type DelegateStakeCooldownEpochs = DelegateStakeCooldownEpochs;
+	type NodeDelegateStakeCooldownEpochs = NodeDelegateStakeCooldownEpochs; 
   type StakeCooldownEpochs = DelegateStakeCooldownEpochs;
 	type DelegateStakeEpochsRemovalWindow = DelegateStakeEpochsRemovalWindow;
   type MaxDelegateStakeUnlockings = MaxDelegateStakeUnlockings;
   type MaxStakeUnlockings = MaxStakeUnlockings;
   type MinProposalStake = MinProposalStake;
+	type TreasuryAccount = ();
 }
 
 pub type BlockNumber = u32;
-
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
-pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-pub const HOURS: BlockNumber = MINUTES * 60;
-pub const DAYS: BlockNumber = HOURS * 24;
 
 parameter_types! {
 	pub const VotingPeriod: BlockNumber = DAYS * 21;
@@ -1581,7 +1602,6 @@ fn genesis_build_panics_with_duplicate_members() {
 fn proposal_network_pallet_vote_2_3() {
 	ExtBuilder::default().build_and_execute(|| {
 		let value = pallet_network::MaxSubnetNodes::<Test>::get();
-		log::error!("value      {:?}", value);
 		let proposal = RuntimeCall::Network(pallet_network::Call::set_max_subnet_nodes {
 			value: 999,
 		});
@@ -1608,7 +1628,6 @@ fn proposal_network_pallet_vote_2_3() {
 			proposal_len
 		));
 		let value_call = pallet_network::MaxSubnetNodes::<Test>::get();
-		log::error!("value_call {:?}", value_call);
 		assert_ne!(value, value_call);
 	})
 }
@@ -1617,7 +1636,6 @@ fn proposal_network_pallet_vote_2_3() {
 fn proposal_network_pallet_vote_1_3() {
 	ExtBuilder::default().build_and_execute(|| {
 		let value = pallet_network::MaxSubnetNodes::<Test>::get();
-		log::error!("value      {:?}", value);
 		let proposal = RuntimeCall::Network(pallet_network::Call::set_max_subnet_nodes {
 			value: 999,
 		});
@@ -1644,7 +1662,6 @@ fn proposal_network_pallet_vote_1_3() {
 			proposal_len
 		));
 		let value_call = pallet_network::MaxSubnetNodes::<Test>::get();
-		log::error!("value_call {:?}", value_call);
 		assert_eq!(value, value_call);
 	})
 }
@@ -1652,10 +1669,9 @@ fn proposal_network_pallet_vote_1_3() {
 #[test]
 fn proposal_network_pallet_vote_4_5() {
 	ExtBuilder::default().build_and_execute(|| {
-		let value = pallet_network::MinStakeBalance::<Test>::get();
-		log::error!("value      {:?}", value);
-		let proposal = RuntimeCall::Network(pallet_network::Call::set_min_stake_balance {
-			value: 200_000_000_000_000_000_000,
+		let value = pallet_network::MinSubnetDelegateStakeFactor::<Test>::get();
+		let proposal = RuntimeCall::Network(pallet_network::Call::set_min_subnet_delegate_stake_factor {
+			value: 1000000000,
 		});
 		let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 		let proposal_weight = proposal.get_dispatch_info().weight;
@@ -1679,8 +1695,7 @@ fn proposal_network_pallet_vote_4_5() {
 			proposal_weight,
 			proposal_len
 		));
-		let value_call = pallet_network::MinStakeBalance::<Test>::get();
-		log::error!("value_call {:?}", value_call);
+		let value_call = pallet_network::MinSubnetDelegateStakeFactor::<Test>::get();
 		assert_ne!(value, value_call);
 	})
 }
@@ -1688,10 +1703,9 @@ fn proposal_network_pallet_vote_4_5() {
 #[test]
 fn proposal_network_pallet_vote_1_5() {
 	ExtBuilder::default().build_and_execute(|| {
-		let value = pallet_network::MinStakeBalance::<Test>::get();
-		log::error!("value      {:?}", value);
-		let proposal = RuntimeCall::Network(pallet_network::Call::set_min_stake_balance {
-			value: 200_000_000_000_000_000_000,
+		let value = pallet_network::MinSubnetDelegateStakeFactor::<Test>::get();
+		let proposal = RuntimeCall::Network(pallet_network::Call::set_min_subnet_delegate_stake_factor {
+			value: 1000000000,
 		});
 		let proposal_len: u32 = proposal.using_encoded(|p| p.len() as u32);
 		let proposal_weight = proposal.get_dispatch_info().weight;
@@ -1715,8 +1729,7 @@ fn proposal_network_pallet_vote_1_5() {
 			proposal_weight,
 			proposal_len
 		));
-		let value_call = pallet_network::MinStakeBalance::<Test>::get();
-		log::error!("value_call {:?}", value_call);
+		let value_call = pallet_network::MinSubnetDelegateStakeFactor::<Test>::get();
 		assert_eq!(value, value_call);
 	})
 }

@@ -22,10 +22,8 @@ impl<T: Config> Pallet<T> {
     if !SubnetsData::<T>::contains_key(subnet_id) {
       return Vec::new();
     }
-    let block: u64 = Self::get_current_block_as_u64();
-    let epoch_length: u64 = T::EpochLength::get();
-    let epoch: u64 = block / epoch_length;
-    Self::get_classified_subnet_nodes(subnet_id, &SubnetNodeClass::Idle, epoch)
+    let epoch: u32 = Self::get_current_epoch_as_u32();
+    Self::get_classified_subnet_nodes(subnet_id, &SubnetNodeClass::Queue, epoch)
   }
 
   pub fn get_subnet_nodes_included(
@@ -34,9 +32,7 @@ impl<T: Config> Pallet<T> {
     if !SubnetsData::<T>::contains_key(subnet_id) {
       return Vec::new();
     }
-    let block: u64 = Self::get_current_block_as_u64();
-    let epoch_length: u64 = T::EpochLength::get();
-    let epoch: u64 = block / epoch_length;
+    let epoch: u32 = Self::get_current_epoch_as_u32();
     Self::get_classified_subnet_nodes(subnet_id, &SubnetNodeClass::Included, epoch)
   }
 
@@ -46,9 +42,7 @@ impl<T: Config> Pallet<T> {
     if !SubnetsData::<T>::contains_key(subnet_id) {
       return Vec::new();
     }
-    let block: u64 = Self::get_current_block_as_u64();
-    let epoch_length: u64 = T::EpochLength::get();
-    let epoch: u64 = block / epoch_length;
+    let epoch: u32 = Self::get_current_epoch_as_u32();
     Self::get_classified_subnet_nodes(subnet_id, &SubnetNodeClass::Validator, epoch)
   }
 
@@ -58,9 +52,7 @@ impl<T: Config> Pallet<T> {
     if !SubnetsData::<T>::contains_key(subnet_id) {
       return Vec::new();
     }
-    let block: u64 = Self::get_current_block_as_u64();
-    let epoch_length: u64 = T::EpochLength::get();
-    let epoch: u64 = block / epoch_length;
+    let epoch: u32 = Self::get_current_epoch_as_u32();
     Self::get_classified_subnet_node_info(subnet_id, &SubnetNodeClass::Validator, epoch)
   }
 
@@ -107,16 +99,15 @@ impl<T: Config> Pallet<T> {
   // }
 
   pub fn get_minimum_subnet_nodes(memory_mb: u128) -> u32 {
-    Self::get_min_subnet_nodes(BaseSubnetNodeMemoryMB::<T>::get(), memory_mb)
+    MinSubnetNodes::<T>::get()
   }
 
   pub fn get_minimum_delegate_stake(memory_mb: u128) -> u128 {
-    let min_nodes = Self::get_min_subnet_nodes(BaseSubnetNodeMemoryMB::<T>::get(), memory_mb);
-    Self::get_min_subnet_delegate_stake_balance(min_nodes)
+    Self::get_min_subnet_delegate_stake_balance()
   }
 
   pub fn get_subnet_node_stake_by_peer_id(subnet_id: u32, peer_id: PeerId) -> u128 {
-    match SubnetNodeAccount::<T>::try_get(subnet_id, peer_id.clone()) {
+    match PeerIdSubnetNode::<T>::try_get(subnet_id, &peer_id) {
       Ok(subnet_node_id) => {
         let hotkey = SubnetNodeIdHotkey::<T>::get(subnet_id, subnet_node_id).unwrap(); // TODO: error fallback
         AccountSubnetStake::<T>::get(hotkey, subnet_id)
@@ -127,8 +118,15 @@ impl<T: Config> Pallet<T> {
 
   // TODO: Make this only return true is Validator subnet node
   pub fn is_subnet_node_by_peer_id(subnet_id: u32, peer_id: Vec<u8>) -> bool {
-    match SubnetNodeAccount::<T>::try_get(subnet_id, PeerId(peer_id)) {
-      Ok(account_id) => true,
+    match PeerIdSubnetNode::<T>::try_get(subnet_id, PeerId(peer_id)) {
+      Ok(_) => true,
+      Err(()) => false,
+    }
+  }
+
+  pub fn is_subnet_node_by_bootstrap_peer_id(subnet_id: u32, peer_id: Vec<u8>) -> bool {
+    match BootstrapPeerIdSubnetNode::<T>::try_get(subnet_id, PeerId(peer_id)) {
+      Ok(_) => true,
       Err(()) => false,
     }
   }
@@ -137,7 +135,7 @@ impl<T: Config> Pallet<T> {
     let mut subnet_nodes: BTreeMap<Vec<u8>, bool> = BTreeMap::new();
 
     for peer_id in peer_ids.iter() {
-      let is = match SubnetNodeAccount::<T>::try_get(subnet_id, PeerId(peer_id.clone())) {
+      let is = match PeerIdSubnetNode::<T>::try_get(subnet_id, PeerId(peer_id.clone())) {
         Ok(_) => true,
         Err(()) => false,
       };

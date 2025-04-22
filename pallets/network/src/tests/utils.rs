@@ -11,46 +11,11 @@ use frame_support::BoundedVec;
 use sp_core::OpaquePeerId as PeerId;
 use crate::{
   Error,
-  BaseSubnetNodeMemoryMB,
-  MaxSubnetMemoryMB,
   LastSubnetRegistrationEpoch,
   MinSubnetRegistrationFee,
   MaxSubnetRegistrationFee,
   SubnetRegistrationInterval,
 };
-
-// #[test]
-// fn test_get_min_subnet_nodes_scaled() {
-//   new_test_ext().execute_with(|| {
-//     let base_node_memory: u128 = BaseSubnetNodeMemoryMB::<Test>::get();
-//     let max_subnet_memory: u128 = MaxSubnetMemoryMB::<Test>::get();
-
-//     let step = max_subnet_memory / 100;
-//     let mut i = step;
-
-//     let mut last_min_subnet_nodes = 0;
-
-//     while i < max_subnet_memory {
-//       let min_subnet_nodes = Network::get_min_subnet_nodes(base_node_memory, i);
-//       log::error!(
-//         "Min: {:?} Last Min: {:?} step: {:?}", 
-//         min_subnet_nodes, 
-//         last_min_subnet_nodes,
-//         step
-//       );
-
-//       assert!(
-//         min_subnet_nodes >= last_min_subnet_nodes, 
-//         "Min: {:?} Last Min: {:?} step: {:?}", 
-//         min_subnet_nodes, 
-//         last_min_subnet_nodes,
-//         step
-//       );
-//       last_min_subnet_nodes = min_subnet_nodes;
-//       i += step;
-//     }
-//   });
-// }
 
 // #[test]
 // fn test_registration_cost() {
@@ -237,13 +202,3 @@ fn test_get_next_registration_epoch() {
     assert_eq!(next_registration_epoch, period*2);
   })
 }
-
-// #[test]
-// fn test_get_target_subnet_nodes() {
-//   new_test_ext().execute_with(|| {
-//     let target_nodes = Network::get_target_subnet_nodes(10);
-//     log::error!("target_nodes: {:?}", target_nodes);
-//     assert!(target_nodes < 100);
-//   });
-// }
-

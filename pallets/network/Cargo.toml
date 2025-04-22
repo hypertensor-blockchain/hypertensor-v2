@@ -39,6 +39,9 @@ pallet-collective = { version = "37.0.0", default-features = false, path = "../c
 
 [dev-dependencies]
 sp-io = { default-features = true, workspace = true }
+env_logger = "0.10"
+pallet-treasury.workspace = true
+pallet-tx-pause.workspace = true
 
 [features]
 default = ["std"]

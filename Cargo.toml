@@ -77,6 +77,8 @@ pallet-proxy = { version = "37.0.0", default-features = false }
 pallet-preimage = { version = "37.0.0", default-features = false }
 pallet-scheduler = { version = "38.0.0", default-features = false }
 pallet-node-authorization = { version = "37.0.0", default-features = false }
+pallet-treasury = { version = "36.0.0", default-features = false }
+pallet-tx-pause = { version = "18.0.0", default-features = false }
 scale-info = { version = "2.11.1", default-features = false }
 sp-genesis-builder = { version = "0.15.0", default-features = false }
 sp-offchain = { version = "34.0.0", default-features = false }

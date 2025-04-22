@@ -262,6 +262,9 @@ fn local_genesis(
 			// Assign network admin rights.
 			"key": Some(root_key),
 		},
+		"treasury": {
+
+		},
 		// "nodeAuthorization": {
 		// 	"nodes": vec![
 		// 		(
@@ -311,6 +314,10 @@ fn testnet_gavin_genesis(
 			// Assign network admin rights.
 			"key": Some(root_key),
 		},
+		"treasury": {
+
+		},
+
 		// "nodeAuthorization": {
 		// 	"nodes": vec![
 		// 		(
@@ -360,6 +367,10 @@ fn testnet_tensor_genesis(
 			// Assign network admin rights.
 			"key": Some(root_key),
 		},
+		"treasury": {
+
+		},
+
 		// "nodeAuthorization": {
 		// 	"nodes": vec![
 		// 		(

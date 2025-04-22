@@ -20,7 +20,7 @@ use log::info;
 // ///
 // ///
 
-pub fn setup_blocks(blocks: u64) {
+pub fn setup_blocks(blocks: u32) {
   let mut parent_hash = System::parent_hash();
 
   for i in 1..(blocks + 1) {

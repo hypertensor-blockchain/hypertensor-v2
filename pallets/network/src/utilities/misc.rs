@@ -17,8 +17,8 @@ use super::*;
 
 impl<T: Config> Pallet<T> {
   // Loosely validates Node ID
-  pub fn validate_peer_id(peer_id: PeerId) -> bool {
-    let peer_id_0 = peer_id.0;
+  pub fn validate_peer_id(peer_id: &PeerId) -> bool {
+    let peer_id_0 = &peer_id.0;
     let len = peer_id_0.len();
 
     // PeerId must be equal to or greater than 32 chars
@@ -43,24 +43,77 @@ impl<T: Config> Pallet<T> {
     false
   }
   
-  pub fn get_tx_rate_limit() -> u64 {
+  pub fn get_tx_rate_limit() -> u32 {
     TxRateLimit::<T>::get()
   }
 
-  pub fn set_last_tx_block(key: &T::AccountId, block: u64) {
+  pub fn set_last_tx_block(key: &T::AccountId, block: u32) {
     LastTxBlock::<T>::insert(key, block)
   }
 
-  pub fn get_last_tx_block(key: &T::AccountId) -> u64 {
+  pub fn get_last_tx_block(key: &T::AccountId) -> u32 {
     LastTxBlock::<T>::get(key)
   }
 
-  pub fn exceeds_tx_rate_limit(prev_tx_block: u64, current_block: u64) -> bool {
-    let rate_limit: u64 = Self::get_tx_rate_limit();
+  pub fn exceeds_tx_rate_limit(prev_tx_block: u32, current_block: u32) -> bool {
+    let rate_limit: u32 = Self::get_tx_rate_limit();
     if rate_limit == 0 || prev_tx_block == 0 {
       return false;
     }
 
     return current_block - prev_tx_block <= rate_limit;
   }
+
+  pub fn balance_to_u128(
+    input: <<T as pallet::Config>::Currency as frame_support::traits::Currency<<T as frame_system::Config>::AccountId>>::Balance,
+  ) -> Option<u128> {
+    input.try_into().ok()
+  }
+
+  /// Get total tokens in circulation
+  pub fn get_total_network_issuance() -> u128 {
+    let total_issuance_as_balance = T::Currency::total_issuance();
+    let total_issuance: u128 = total_issuance_as_balance.try_into().unwrap_or(0);
+    let total_staked: u128 = TotalStake::<T>::get();
+    let total_delegate_staked: u128 = TotalDelegateStake::<T>::get();
+    let total_node_delegate_staked: u128 = TotalNodeDelegateStake::<T>::get();
+    total_issuance
+      .saturating_add(total_staked)
+      .saturating_add(total_delegate_staked)
+      .saturating_add(total_node_delegate_staked)
+  }
+  
+  pub fn send_to_treasury(
+    who: &T::AccountId, 
+    amount: <<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance
+  ) -> DispatchResult {
+    let treasury_account = T::TreasuryAccount::get();
+
+    T::Currency::transfer(
+      who,
+      &treasury_account,
+      amount,
+      ExistenceRequirement::KeepAlive,
+    )?;
+
+    Ok(())
+  }
+
+  pub fn is_paused() -> DispatchResult {
+    ensure!(
+      !TxPause::<T>::get(),
+      Error::<T>::Paused
+    );
+    Ok(())
+  }
+
+  // pub fn calculate_registration_delay(
+  //   subnet_id: u32,
+  //   base_delay: u32, 
+  //   scaling_factor: f64, 
+  //   current_nodes: u32
+  // ) -> u32 {
+  //   let delay = base_delay as f64 / (1.0 + scaling_factor * (1.0 + current_nodes as f64).log2());
+  //   delay.round() as u32
+  // }
 }

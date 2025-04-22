@@ -14,18 +14,19 @@
 // limitations under the License.
 
 use super::*;
+use sp_core::U256;
 
 impl<T: Config> Pallet<T> {
   pub fn add_balance_to_unbonding_ledger(
     coldkey: &T::AccountId,
     amount: u128,
-    cooldown_epoch_length: u64,
-    block: u64,
+    cooldown_epoch_length: u32,
+    block: u32,
   ) -> DispatchResult {
-    let epoch_length: u64 = T::EpochLength::get();
-    let epoch: u64 = block / epoch_length;
+    let epoch = Self::get_current_epoch_as_u32();
+    let claim_epoch = cooldown_epoch_length.saturating_add(epoch);
 
-    let unbondings = StakeUnbondingLedger::<T>::get(coldkey.clone());
+    let unbondings = StakeUnbondingLedger::<T>::get(&coldkey);
 
     // --- Ensure we don't surpass max unlockings by attempting to unlock unbondings
     if unbondings.len() as u32 == T::MaxStakeUnlockings::get() {
@@ -33,7 +34,7 @@ impl<T: Config> Pallet<T> {
     }
 
     // --- Get updated unbondings after claiming unbondings
-    let mut unbondings = StakeUnbondingLedger::<T>::get(coldkey.clone());
+    let mut unbondings = StakeUnbondingLedger::<T>::get(&coldkey);
 
     // We're about to add another unbonding to the ledger - it must be n-1
     ensure!(
@@ -42,7 +43,7 @@ impl<T: Config> Pallet<T> {
     );
 
     StakeUnbondingLedger::<T>::mutate(&coldkey, |ledger| {
-      ledger.entry(epoch).and_modify(|v| *v += amount).or_insert(amount);
+      ledger.entry(claim_epoch).and_modify(|v| v.saturating_accrue(amount)).or_insert(amount);
     });
 
     Ok(())
@@ -50,17 +51,15 @@ impl<T: Config> Pallet<T> {
 
   // Infallible
   pub fn do_claim_unbondings(coldkey: &T::AccountId) -> u32 {
-    let block: u64 = Self::get_current_block_as_u64();
-    let epoch_length: u64 = T::EpochLength::get();
-    let epoch: u64 = block / epoch_length;
-    let unbondings = StakeUnbondingLedger::<T>::get(coldkey.clone());
+    let epoch = Self::get_current_epoch_as_u32();
+    let unbondings = StakeUnbondingLedger::<T>::get(&coldkey);
 
     let mut unbondings_copy = unbondings.clone();
 
     let mut successful_unbondings = 0;
 
     for (unbonding_epoch, amount) in unbondings.iter() {
-      if epoch <= unbonding_epoch + T::StakeCooldownEpochs::get() {
+      if epoch <= *unbonding_epoch {
         continue
       }
 
@@ -77,7 +76,7 @@ impl<T: Config> Pallet<T> {
     }
 
     if unbondings.len() != unbondings_copy.len() {
-      StakeUnbondingLedger::<T>::insert(coldkey.clone(), unbondings_copy);
+      StakeUnbondingLedger::<T>::insert(&coldkey, unbondings_copy);
     }
     successful_unbondings
   }
@@ -137,5 +136,39 @@ impl<T: Config> Pallet<T> {
     <<T as pallet::Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance,
   > {
     input.try_into().ok()
+  }
+  
+  pub fn convert_to_shares(
+    balance: u128,
+    total_shares: u128,
+    total_balance: u128,
+  ) -> u128 {
+    if total_shares == 0 {
+      return balance;
+    }
+  
+    let balance = U256::from(balance);
+    let total_shares = U256::from(total_shares) + U256::from(10_u128.pow(1));
+    let total_balance = U256::from(total_balance) + U256::from(1);
+  
+    let shares = balance * total_shares / total_balance;
+    shares.try_into().unwrap_or(u128::MAX)
+  }
+  
+  pub fn convert_to_balance(
+    shares: u128,
+    total_shares: u128,
+    total_balance: u128,
+  ) -> u128 {
+    if total_shares == 0 {
+      return shares;
+    }
+  
+    let shares = U256::from(shares);
+    let total_balance = U256::from(total_balance) + U256::from(1);
+    let total_shares = U256::from(total_shares) + U256::from(10_u128.pow(1));
+  
+    let balance = shares * total_balance / total_shares;
+    balance.try_into().unwrap_or(u128::MAX)
   }
 }

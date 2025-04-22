@@ -52,7 +52,7 @@ impl<T: Config> Pallet<T> {
   
     // to-do: add AddStakeRateLimit instead of universal rate limiter
     //        this allows peers to come in freely
-    let block: u64 = Self::get_current_block_as_u64();
+    let block: u32 = Self::get_current_block_as_u32();
     ensure!(
       !Self::exceeds_tx_rate_limit(Self::get_last_tx_block(&coldkey), block),
       Error::<T>::TxRateLimitExceeded
@@ -84,6 +84,7 @@ impl<T: Config> Pallet<T> {
     subnet_id: u32,
     hotkey: T::AccountId,
     is_subnet_node: bool,
+    is_active: bool,
     stake_to_be_removed: u128,
   ) -> DispatchResult {
     let coldkey: T::AccountId = ensure_signed(origin)?;
@@ -117,7 +118,7 @@ impl<T: Config> Pallet<T> {
         Error::<T>::CouldNotConvertToBalance
     );
 
-    let block: u64 = Self::get_current_block_as_u64();
+    let block: u32 = Self::get_current_block_as_u32();
     ensure!(
       !Self::exceeds_tx_rate_limit(Self::get_last_tx_block(&coldkey), block),
       Error::<T>::TxRateLimitExceeded
@@ -127,12 +128,22 @@ impl<T: Config> Pallet<T> {
     Self::decrease_account_stake(&hotkey, subnet_id, stake_to_be_removed);
 
     // --- 9. We add the balancer to the coldkey.  If the above fails we will not credit this coldkey.
-    Self::add_balance_to_unbonding_ledger(
-      &coldkey, 
-      stake_to_be_removed, 
-      T::StakeCooldownEpochs::get(),
-      block
-    ).map_err(|e| e)?;
+    if is_active {
+      Self::add_balance_to_unbonding_ledger(
+        &coldkey, 
+        stake_to_be_removed, 
+        T::StakeCooldownEpochs::get(),
+        block
+      ).map_err(|e| e)?;
+    } else {
+      // Unstaking cooldown for nodes that never activated
+      Self::add_balance_to_unbonding_ledger(
+        &coldkey, 
+        stake_to_be_removed, 
+        RegisteredStakeCooldownEpochs::<T>::get(),
+        block
+      ).map_err(|e| e)?;  
+    }
 
     // Set last block for rate limiting
     Self::set_last_tx_block(&coldkey, block);

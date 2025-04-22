@@ -25,7 +25,7 @@ impl<T: Config> Pallet<T> {
     peer_id: PeerId,
     data: Vec<u8>,
   ) -> DispatchResult {
-    let proposer_subnet_node_id = HotkeySubnetNodeId::<T>::get(subnet_id, hotkey.clone());
+    let proposer_subnet_node_id = HotkeySubnetNodeId::<T>::get(subnet_id, &hotkey);
     ensure!(
       proposer_subnet_node_id == Some(subnet_node_id),
       Error::<T>::NotUidOwner
@@ -37,21 +37,21 @@ impl<T: Config> Pallet<T> {
       Err(()) => return Err(Error::<T>::SubnetNotExist.into()),
     };
 
-    let block: u64 = Self::get_current_block_as_u64();
-    let epoch: u64 = block / T::EpochLength::get();
+    let block: u32 = Self::get_current_block_as_u32();
+    let epoch: u32 = block / T::EpochLength::get();
 
     // --- Ensure proposer account has peer and is validator class
     match SubnetNodesData::<T>::try_get(
       subnet_id, 
       subnet_node_id
     ) {
-      Ok(subnet_node) => subnet_node.has_classification(&SubnetNodeClass::Validator, epoch as u64),
+      Ok(subnet_node) => subnet_node.has_classification(&SubnetNodeClass::Validator, epoch),
       Err(()) => return Err(Error::<T>::SubnetNotExist.into()),
     };
 
     // Unique subnet_id -> PeerId
     // Ensure peer ID exists within subnet
-    let defendant_subnet_node_id = match SubnetNodeAccount::<T>::try_get(subnet_id, peer_id.clone()) {
+    let defendant_subnet_node_id = match PeerIdSubnetNode::<T>::try_get(subnet_id, &peer_id) {
       Ok(defendant_subnet_node_id) => defendant_subnet_node_id,
       Err(()) => return Err(Error::<T>::PeerIdNotExist.into()),
     };
@@ -73,7 +73,7 @@ impl<T: Config> Pallet<T> {
 
     // safe unwrap after `contains_key`
     ensure!(
-      subnet_nodes_count as u32 >= subnet.min_nodes,
+      subnet_nodes_count as u32 >= MinSubnetNodes::<T>::get(),
       Error::<T>::SubnetNodesMin
     );
 
@@ -105,7 +105,7 @@ impl<T: Config> Pallet<T> {
     let proposal_bid_amount_as_balance = Self::u128_to_balance(proposal_bid_amount);
 
     let can_withdraw: bool = Self::can_remove_balance_from_coldkey_account(
-      &hotkey.clone(),
+      &hotkey,
       proposal_bid_amount_as_balance.unwrap(),
     );
 
@@ -116,7 +116,7 @@ impl<T: Config> Pallet<T> {
 
     // --- Withdraw bid amount from proposer accounts
     let _ = T::Currency::withdraw(
-      &hotkey.clone(),
+      &hotkey,
       proposal_bid_amount_as_balance.unwrap(),
       WithdrawReasons::except(WithdrawReasons::TRANSFER),
       ExistenceRequirement::KeepAlive,
@@ -201,7 +201,7 @@ impl<T: Config> Pallet<T> {
         return Err(Error::<T>::ProposalInvalid.into()),
     };
 
-    let subnet_node_id = HotkeySubnetNodeId::<T>::get(subnet_id, hotkey.clone());
+    let subnet_node_id = HotkeySubnetNodeId::<T>::get(subnet_id, &hotkey);
 
     // --- Ensure defendant
     ensure!(
@@ -216,7 +216,7 @@ impl<T: Config> Pallet<T> {
     );
     
     let challenge_period = ChallengePeriod::<T>::get();
-    let block: u64 = Self::get_current_block_as_u64();
+    let block: u32 = Self::get_current_block_as_u32();
 
     // --- Ensure challenge period is active
     ensure!(
@@ -253,7 +253,7 @@ impl<T: Config> Pallet<T> {
       ExistenceRequirement::KeepAlive,
     );
 
-    let epoch: u64 = block / T::EpochLength::get();
+    let epoch: u32 = block / T::EpochLength::get();
 
     Proposals::<T>::mutate(
       subnet_id,
@@ -284,7 +284,7 @@ impl<T: Config> Pallet<T> {
     proposal_id: u32,
     vote: VoteType
   ) -> DispatchResult {
-    let voter_subnet_node_id = HotkeySubnetNodeId::<T>::get(subnet_id, hotkey.clone());
+    let voter_subnet_node_id = HotkeySubnetNodeId::<T>::get(subnet_id, &hotkey);
     ensure!(
       voter_subnet_node_id == Some(subnet_node_id),
       Error::<T>::NotUidOwner
@@ -326,7 +326,7 @@ impl<T: Config> Pallet<T> {
     );
     
     let voting_period = VotingPeriod::<T>::get();
-    let block: u64 = Self::get_current_block_as_u64();
+    let block: u32 = Self::get_current_block_as_u32();
 
     // --- Ensure voting period is active
     // Voting period starts after the challenge block
@@ -386,7 +386,7 @@ impl<T: Config> Pallet<T> {
         return Err(Error::<T>::ProposalInvalid.into()),
     };
 
-    let canceler_subnet_node_id = HotkeySubnetNodeId::<T>::get(subnet_id, hotkey.clone());
+    let canceler_subnet_node_id = HotkeySubnetNodeId::<T>::get(subnet_id, &hotkey);
     ensure!(
       subnet_node_id == canceler_subnet_node_id.unwrap(),
       Error::<T>::NotUidOwner
@@ -454,7 +454,7 @@ impl<T: Config> Pallet<T> {
     );
     
     let voting_period = VotingPeriod::<T>::get();
-    let block: u64 = Self::get_current_block_as_u64();
+    let block: u32 = Self::get_current_block_as_u32();
 
     // --- Ensure voting period is completed
     ensure!(
@@ -588,7 +588,7 @@ impl<T: Config> Pallet<T> {
   fn account_has_active_proposal_as_plaintiff(
     subnet_id: u32, 
     subnet_node_id: u32, 
-    block: u64,
+    block: u32,
   ) -> bool {
     let challenge_period = ChallengePeriod::<T>::get();
     let voting_period = VotingPeriod::<T>::get();
@@ -602,8 +602,8 @@ impl<T: Config> Pallet<T> {
       }
 
       // At this point we have a proposal that matches the plaintiff
-      let proposal_block: u64 = proposal.start_block;
-      let challenge_block: u64 = proposal.challenge_block;
+      let proposal_block: u32 = proposal.start_block;
+      let challenge_block: u32 = proposal.challenge_block;
       if challenge_block == 0 {
         // If time remaining for challenge
         if block < proposal.start_block + challenge_period {
@@ -627,7 +627,7 @@ impl<T: Config> Pallet<T> {
   fn account_has_active_proposal_as_defendant(
     subnet_id: u32, 
     subnet_node_id: u32, 
-    block: u64,
+    block: u32,
   ) -> bool {
     let challenge_period = ChallengePeriod::<T>::get();
     let voting_period = VotingPeriod::<T>::get();
@@ -646,8 +646,8 @@ impl<T: Config> Pallet<T> {
       }
 
       // At this point we have a proposal that matches the defendant
-      let proposal_block: u64 = proposal.start_block;
-      let challenge_block: u64 = proposal.challenge_block;
+      let proposal_block: u32 = proposal.start_block;
+      let challenge_block: u32 = proposal.challenge_block;
       if challenge_block == 0 {
         // If time remaining for challenge
         if block < proposal.start_block + challenge_period {
